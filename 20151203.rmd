@@ -1,0 +1,126 @@
+---
+title: "Day 3"
+author: "Derek Sollberger"
+date: "11/2/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("sets") #for tuple class
+library("tidyverse")
+```
+
+--- Day 3: Perfectly Spherical Houses in a Vacuum ---
+
+Santa is delivering presents to an infinite two-dimensional grid of houses.
+
+He begins by delivering a present to the house at his starting location, and then an elf at the North Pole calls him via radio and tells him where to move next. Moves are always exactly one house to the north (^), south (v), east (>), or west (<). After each move, he delivers another present to the house at his new location.
+
+However, the elf back at the north pole has had a little too much eggnog, and so his directions are a little off, and Santa ends up visiting some houses more than once. How many houses receive at least one present?
+
+For example:
+
+    > delivers presents to 2 houses: one at the starting location, and one to the east.
+    ^>v< delivers presents to 4 houses in a square, including twice to the house at his starting/ending location.
+    ^v^v^v^v^v delivers a bunch of presents to some very lucky children at only 2 houses.
+
+```{r}
+santas_route <- read.table("20151203input.txt")
+santas_steps <- stringr::str_split(santas_route, "")[[1]]
+```
+
+I am trying to solve this problem directly.
+
+* If Santa revists a house, add one present
+* If Santa visits a new house, add the house to the data with one present
+
+```{r, eval = FALSE}
+# starting house
+x <- 0
+y <- 0
+gifts <- 1
+
+gift_df <- data.frame(x, y, gifts)
+```
+
+```{r, eval = FALSE}
+# Santa's journey
+# for(step in 1:50){
+run_journey <- function(santas_steps){
+  # starting house
+  x <- 0
+  y <- 0
+  gifts <- 1
+  
+  gift_df <- data.frame(x, y, gifts)
+  
+  for(step in 1:length(santas_steps)){
+    if(santas_steps[step] == "^"){ y <- y + 1 }
+    if(santas_steps[step] == ">"){ x <- x + 1 }
+    if(santas_steps[step] == "v"){ y <- y - 1 }
+    if(santas_steps[step] == "<"){ x <- x - 1 }
+    print(paste0("x: ", x, " ", "y: ", y))
+    
+    xvals <- unique(gift_df$x)
+    
+    
+    if(x %in% xvals){
+      subset_df <- gift_df %>% filter(x == x)
+      yvals <- unique(subset_df$y)
+      if(y %in% yvals){
+        #revisited!
+      } else {
+        this_house <- data.frame(x, y, gifts)
+        gift_df <- rbind(gift_df, this_house)
+      }} else {
+        this_house <- data.frame(x, y, gifts)
+        gift_df <- rbind(gift_df, this_house)
+      }  
+  }
+  
+  #return
+  # gift_df
+  print(paste0("Santa visited ", nrow(gift_df), " houses."))
+}
+```
+
+```{r, eval = TRUE}
+# Santa's journey
+run_journey <- function(santas_route){
+  
+  santas_steps <- stringr::str_split(santas_route, "")[[1]]
+  
+  # starting house
+  x <- 0
+  y <- 0
+
+  this_location <- paste0("x: ", x, " ", "y: ", y)
+  visited_locations <- this_location
+  
+  for(step in 1:length(santas_steps)){
+    if(santas_steps[step] == "^"){ y <- y + 1 }
+    if(santas_steps[step] == ">"){ x <- x + 1 }
+    if(santas_steps[step] == "v"){ y <- y - 1 }
+    if(santas_steps[step] == "<"){ x <- x - 1 }
+    this_location <- paste0("x: ", x, " ", "y: ", y)
+    
+    if(!(this_location %in% visited_locations)){
+      visited_locations <- c(visited_locations, this_location)
+    }
+  }
+  
+  #return
+  # gift_df
+  print(paste0("Santa visited ", length(visited_locations), " houses."))
+}
+```
+
+```{r}
+# tests
+run_journey(">")
+run_journey("^>v<")
+run_journey("^v^v^v^v^v")
+run_journey(santas_route)
+```
+
