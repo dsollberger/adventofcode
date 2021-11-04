@@ -1,0 +1,112 @@
+---
+title: "Day 5"
+author: "Derek Sollberger"
+date: "11/3/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 5: Doesn't He Have Intern-Elves For This? ---
+
+Santa needs help figuring out which strings in his text file are naughty or nice.
+
+A nice string is one with all of the following properties:
+
+    It contains at least three vowels (aeiou only), like aei, xazegov, or aeiouaeiouaeiou.
+    It contains at least one letter that appears twice in a row, like xx, abcdde (dd), or aabbccdd (aa, bb, cc, or dd).
+    It does not contain the strings ab, cd, pq, or xy, even if they are part of one of the other requirements.
+
+For example:
+
+    ugknbfddgicrmopn is nice because it has at least three vowels (u...i...o...), a double letter (...dd...), and none of the disallowed substrings.
+    aaa is nice because it has at least three vowels and a double letter, even though the letters used by different rules overlap.
+    jchzalrnumimnmhp is naughty because it has no double letter.
+    haegwjzuvuyypxyu is naughty because it contains the string xy.
+    dvszwmarrgswjxmb is naughty because it contains only one vowel.
+
+How many strings are nice?
+
+```{r}
+# load data
+santas_list_raw <- read.table("20151205input.txt")
+```
+
+```{r}
+# helper function
+vowel_check <- function(child_name){
+  pass_check <- FALSE #initialization
+  
+  if(str_count(child_name, "a") + str_count(child_name, "e") + 
+     str_count(child_name, "i") + str_count(child_name, "o") + 
+     str_count(child_name, "u") >= 3){ pass_check <- TRUE}
+  
+  # return
+  pass_check
+}
+
+# vowel_check("ugknbfddgicrmopn")
+# vowel_check("dvszwmarrgswjxmb")
+```
+
+```{r}
+# helper function
+doubles_check <- function(child_name){
+  pass_check <- FALSE
+  child_name_list <- stringr::str_split(child_name, "")[[1]]
+  n <- length(child_name_list)
+  
+  for(i in 1:(n-1)){
+    if(child_name_list[i] == child_name_list[i+1]){
+      pass_check <- TRUE
+      break
+    }
+  }
+  
+  #return
+  pass_check
+}
+
+# doubles_check("ugknbfddgicrmopn")
+# doubles_check("jchzalrnumimnmhp")
+```
+
+```{r}
+# helper function
+red_flag_check <- function(child_name){
+  pass_check <- TRUE
+  
+  if(str_count(child_name, "ab") > 0){ pass_check <- FALSE }
+  if(str_count(child_name, "cd") > 0){ pass_check <- FALSE }
+  if(str_count(child_name, "pq") > 0){ pass_check <- FALSE }
+  if(str_count(child_name, "xy") > 0){ pass_check <- FALSE }
+  
+  #return
+  pass_check
+}
+
+# red_flag_check("ugknbfddgicrmopn")
+# red_flag_check("haegwjzuvuyypxyu")
+```
+
+```{r}
+# main loop
+nice_children <- 0 #initialization
+N <- nrow(santas_list_raw)
+
+for(i in 1:N){
+  if(vowel_check(santas_list_raw[i,1])){
+    if(doubles_check(santas_list_raw[i,1])){
+      if(red_flag_check(santas_list_raw[i,1])){
+        nice_children <- nice_children + 1
+      }
+    }
+  }
+}
+
+print(paste0("There are ", nice_children, " nice children"))
+```
+
