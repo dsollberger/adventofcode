@@ -1,0 +1,934 @@
+---
+title: "Day 7"
+author: "Derek Sollberger"
+date: "11/4/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 7: Some Assembly Required ---
+
+This year, Santa brought little Bobby Tables a set of wires and bitwise logic gates! Unfortunately, little Bobby is a little under the recommended age range, and he needs help assembling the circuit.
+
+Each wire has an identifier (some lowercase letters) and can carry a 16-bit signal (a number from 0 to 65535). A signal is provided to each wire by a gate, another wire, or some specific value. Each wire can only get a signal from one source, but can provide its signal to multiple destinations. A gate provides no signal until all of its inputs have a signal.
+
+The included instructions booklet describes how to connect the parts together: x AND y -> z means to connect wires x and y to an AND gate, and then connect its output to wire z.
+
+For example:
+
+    123 -> x means that the signal 123 is provided to wire x.
+    x AND y -> z means that the bitwise AND of wire x and wire y is provided to wire z.
+    p LSHIFT 2 -> q means that the value from wire p is left-shifted by 2 and then provided to wire q.
+    NOT e -> f means that the bitwise complement of the value from wire e is provided to wire f.
+
+Other possible gates include OR (bitwise OR) and RSHIFT (right-shift). If, for some reason, you'd like to emulate the circuit instead, almost all programming languages (for example, C, JavaScript, or Python) provide operators for these gates.
+
+For example, here is a simple circuit:
+
+123 -> x
+456 -> y
+x AND y -> d
+x OR y -> e
+x LSHIFT 2 -> f
+y RSHIFT 2 -> g
+NOT x -> h
+NOT y -> i
+
+After it is run, these are the signals on the wires:
+
+d: 72
+e: 507
+f: 492
+g: 114
+h: 65412
+i: 65079
+x: 123
+y: 456
+
+In little Bobby's kit's instructions booklet (provided as your puzzle input), what signal is ultimately provided to wire a?
+
+```{r}
+full_circuit <- readLines("20151207input.txt")
+example_circuit <- readLines("20151207example.txt")
+
+bitwise_NOT <- function(x){
+  # INPUT: integer (in base 10)
+  # OUTPUT: integer (in base 10)
+  # This function will compute the bitwise NOT operation, 
+  # but for 16-bit numbers
+  strtoi(paste0(rev(as.character(as.integer(!as.integer(intToBits(x)))[1:16])), collapse = ""), base = 2)
+  
+  # intToBits(x) %>%
+  #   as.integer() %>%
+  #   !(x)%>%
+  #   ()[1:16] %>%
+  #   as.integer() %>%
+  #   as.character() %>%
+  #   rev() %>%
+  #   paste0(collapse = "") %>%
+  #   strtoi(base = 2)
+}
+```
+
+```{r}
+# trying example with the bit-wise operations in R
+x <- 123
+y <- 456
+d <- bitwAnd(x,y)
+e <- bitwOr(x,y)
+f <- bitwShiftL(x,2)
+g <- bitwShiftR(y,2)
+h <- bitwise_NOT(x)
+i <- bitwise_NOT(y)
+```
+
+
+```{r}
+N <- length(example_circuit)
+
+# set up data frame
+node_dest <- rep(NA, N)
+operation <- rep(NA, N)
+node1 <- rep(NA, N)
+node2 <- rep(NA, N)
+num_input <- rep(NA, N)
+
+
+rewritten <- data.frame(node_dest, operation, node1, node2, num_input)
+
+output_instructions <- "" #initialization
+
+for(k in 1:N){
+  split_formula <- str_split(example_circuit[k], " -> ")[[1]]
+  
+  RHS <- ""
+  LHS <- split_formula[2]
+  
+  if(str_detect(split_formula[1], "AND")){
+    these_instructions <- str_split(split_formula[1], " ")[[1]]
+    RHS <- paste0("bitwAnd(",
+                  these_instructions[1],
+                  ",",
+                  these_instructions[3],
+                  ")")
+  }
+  if(str_detect(split_formula[1], "OR")){
+    these_instructions <- str_split(split_formula[1], " ")[[1]]
+    RHS <- paste0("bitwOr(",
+                  these_instructions[1],
+                  ",",
+                  these_instructions[3],
+                  ")")
+  }
+  if(str_detect(split_formula[1], "LSHIFT")){
+    these_instructions <- str_split(split_formula[1], " ")[[1]]
+    RHS <- paste0("bitwShiftL(",
+                  these_instructions[1],
+                  ",",
+                  these_instructions[3],
+                  ")")
+  }
+  if(str_detect(split_formula[1], "RSHIFT")){
+    these_instructions <- str_split(split_formula[1], " ")[[1]]
+    RHS <- paste0("bitwShiftR(",
+                  these_instructions[1],
+                  ",",
+                  these_instructions[3],
+                  ")")
+  }
+  if(str_detect(split_formula[1], "NOT")){
+    these_instructions <- str_split(split_formula[1], " ")[[1]]
+    RHS <- paste0("bitwise_NOT(",
+                  these_instructions[2],
+                  ")")
+  }
+  if(RHS == ""){
+    RHS <- split_formula[1]
+  }
+  
+  rewritten_instructions <- paste(LHS, "<-", RHS)
+  output_instructions <- c(output_instructions, rewritten_instructions)
+}
+
+#print
+output_instructions
+```
+
+```{r}
+N <- length(full_circuit)
+
+# set up data frame
+node_dest <- rep(NA, N)
+instructions <- rep(NA, N)
+rewritten_df <- data.frame(node_dest, instructions)
+
+for(k in 1:N){
+  split_formula <- str_split(full_circuit[k], " -> ")[[1]]
+  
+  RHS <- ""
+  LHS <- split_formula[2]
+  
+  if(str_detect(split_formula[1], "AND")){
+    these_instructions <- str_split(split_formula[1], " ")[[1]]
+    RHS <- paste0("bitwAnd(",
+                  these_instructions[1],
+                  ",",
+                  these_instructions[3],
+                  ")")
+  }
+  if(str_detect(split_formula[1], "OR")){
+    these_instructions <- str_split(split_formula[1], " ")[[1]]
+    RHS <- paste0("bitwOr(",
+                  these_instructions[1],
+                  ",",
+                  these_instructions[3],
+                  ")")
+  }
+  if(str_detect(split_formula[1], "LSHIFT")){
+    these_instructions <- str_split(split_formula[1], " ")[[1]]
+    RHS <- paste0("bitwShiftL(",
+                  these_instructions[1],
+                  ",",
+                  these_instructions[3],
+                  ")")
+  }
+  if(str_detect(split_formula[1], "RSHIFT")){
+    these_instructions <- str_split(split_formula[1], " ")[[1]]
+    RHS <- paste0("bitwShiftR(",
+                  these_instructions[1],
+                  ",",
+                  these_instructions[3],
+                  ")")
+  }
+  if(str_detect(split_formula[1], "NOT")){
+    these_instructions <- str_split(split_formula[1], " ")[[1]]
+    RHS <- paste0("bitwise_NOT(",
+                  these_instructions[2],
+                  ")")
+  }
+  if(RHS == ""){
+    RHS <- split_formula[1]
+  }
+  
+  rewritten_instructions <- paste(LHS, "<-", RHS)
+  rewritten_df[k,1] <- split_formula[2]
+  rewritten_df[k,2] <- rewritten_instructions
+}
+```
+
+```{r}
+one_letter_nodes <- rewritten_df %>%
+  filter(str_length(node_dest) == 1) %>%
+  arrange(node_dest)
+two_letter_nodes <- rewritten_df %>%
+  filter(str_length(node_dest) == 2) %>%
+  arrange(node_dest)
+
+ordered_df <- rbind(one_letter_nodes, two_letter_nodes)
+
+writeLines(ordered_df[,2], "20151207output.txt", sep = "\n")
+```
+
+```{r}
+# needed to move "a <- lx" to the end
+# needed to avoid reserved words "if" and "in"
+
+b <- 44430
+c <- 0
+d <- bitwShiftR(b,2)
+e <- bitwShiftR(b,3)
+f <- bitwShiftR(b,5)
+g <- bitwOr(e,f)
+h <- bitwAnd(e,f)
+i <- bitwise_NOT(h)
+j <- bitwAnd(g,i)
+k <- bitwOr(d,j)
+l <- bitwAnd(d,j)
+m <- bitwise_NOT(l)
+n <- bitwAnd(k,m)
+o <- bitwOr(b,n)
+p <- bitwAnd(b,n)
+q <- bitwise_NOT(p)
+r <- bitwAnd(o,q)
+s <- bitwAnd(1,r)
+t <- bitwShiftL(c,1)
+u <- bitwOr(t,s)
+v <- bitwShiftR(b,1)
+w <- bitwShiftL(s,15)
+x <- bitwOr(v,w)
+y <- bitwShiftR(x,2)
+z <- bitwShiftR(x,3)
+aa <- bitwShiftR(x,5)
+ab <- bitwOr(z,aa)
+ac <- bitwAnd(z,aa)
+ad <- bitwise_NOT(ac)
+ae <- bitwAnd(ab,ad)
+af <- bitwOr(y,ae)
+ag <- bitwAnd(y,ae)
+ah <- bitwise_NOT(ag)
+ai <- bitwAnd(af,ah)
+aj <- bitwOr(x,ai)
+ak <- bitwAnd(x,ai)
+al <- bitwise_NOT(ak)
+am <- bitwAnd(aj,al)
+an <- bitwAnd(1,am)
+ao <- bitwShiftL(u,1)
+ap <- bitwOr(ao,an)
+aq <- bitwShiftR(x,1)
+ar <- bitwShiftL(an,15)
+as <- bitwOr(aq,ar)
+at <- bitwShiftR(as,2)
+au <- bitwShiftR(as,3)
+av <- bitwShiftR(as,5)
+aw <- bitwOr(au,av)
+ax <- bitwAnd(au,av)
+ay <- bitwise_NOT(ax)
+az <- bitwAnd(aw,ay)
+ba <- bitwOr(at,az)
+bb <- bitwAnd(at,az)
+bc <- bitwise_NOT(bb)
+bd <- bitwAnd(ba,bc)
+be <- bitwOr(as,bd)
+bf <- bitwAnd(as,bd)
+bg <- bitwise_NOT(bf)
+bh <- bitwAnd(be,bg)
+bi <- bitwAnd(1,bh)
+bj <- bitwShiftL(ap,1)
+bk <- bitwOr(bj,bi)
+bl <- bitwShiftR(as,1)
+bm <- bitwShiftL(bi,15)
+bn <- bitwOr(bl,bm)
+bo <- bitwShiftR(bn,2)
+bp <- bitwShiftR(bn,3)
+bq <- bitwShiftR(bn,5)
+br <- bitwOr(bp,bq)
+bs <- bitwAnd(bp,bq)
+bt <- bitwise_NOT(bs)
+bu <- bitwAnd(br,bt)
+bv <- bitwOr(bo,bu)
+bw <- bitwAnd(bo,bu)
+bx <- bitwise_NOT(bw)
+by <- bitwAnd(bv,bx)
+bz <- bitwOr(bn,by)
+ca <- bitwAnd(bn,by)
+cb <- bitwise_NOT(ca)
+cc <- bitwAnd(bz,cb)
+cd <- bitwAnd(1,cc)
+ce <- bitwShiftL(bk,1)
+cf <- bitwOr(ce,cd)
+cg <- bitwShiftR(bn,1)
+ch <- bitwShiftL(cd,15)
+ci <- bitwOr(cg,ch)
+cj <- bitwShiftR(ci,2)
+ck <- bitwShiftR(ci,3)
+cl <- bitwShiftR(ci,5)
+cm <- bitwOr(ck,cl)
+cn <- bitwAnd(ck,cl)
+co <- bitwise_NOT(cn)
+cp <- bitwAnd(cm,co)
+cq <- bitwOr(cj,cp)
+cr <- bitwAnd(cj,cp)
+cs <- bitwise_NOT(cr)
+ct <- bitwAnd(cq,cs)
+cu <- bitwOr(ci,ct)
+cv <- bitwAnd(ci,ct)
+cw <- bitwise_NOT(cv)
+cx <- bitwAnd(cu,cw)
+cy <- bitwAnd(1,cx)
+cz <- bitwShiftL(cf,1)
+da <- bitwOr(cz,cy)
+db <- bitwShiftR(ci,1)
+dc <- bitwShiftL(cy,15)
+dd <- bitwOr(db,dc)
+de <- bitwShiftR(dd,2)
+df <- bitwShiftR(dd,3)
+dg <- bitwShiftR(dd,5)
+dh <- bitwOr(df,dg)
+di <- bitwAnd(df,dg)
+dj <- bitwise_NOT(di)
+dk <- bitwAnd(dh,dj)
+dl <- bitwOr(de,dk)
+dm <- bitwAnd(de,dk)
+dn <- bitwise_NOT(dm)
+do <- bitwAnd(dl,dn)
+dp <- bitwOr(dd,do)
+dq <- bitwAnd(dd,do)
+dr <- bitwise_NOT(dq)
+ds <- bitwAnd(dp,dr)
+dt <- bitwAnd(1,ds)
+du <- bitwShiftL(da,1)
+dv <- bitwOr(du,dt)
+dw <- bitwShiftR(dd,1)
+dx <- bitwShiftL(dt,15)
+dy <- bitwOr(dw,dx)
+dz <- bitwShiftR(dy,2)
+ea <- bitwShiftR(dy,3)
+eb <- bitwShiftR(dy,5)
+ec <- bitwOr(ea,eb)
+ed <- bitwAnd(ea,eb)
+ee <- bitwise_NOT(ed)
+ef <- bitwAnd(ec,ee)
+eg <- bitwOr(dz,ef)
+eh <- bitwAnd(dz,ef)
+ei <- bitwise_NOT(eh)
+ej <- bitwAnd(eg,ei)
+ek <- bitwOr(dy,ej)
+el <- bitwAnd(dy,ej)
+em <- bitwise_NOT(el)
+en <- bitwAnd(ek,em)
+eo <- bitwAnd(1,en)
+ep <- bitwShiftL(dv,1)
+eq <- bitwOr(ep,eo)
+er <- bitwShiftR(dy,1)
+es <- bitwShiftL(eo,15)
+et <- bitwOr(er,es)
+eu <- bitwShiftR(et,2)
+ev <- bitwShiftR(et,3)
+ew <- bitwShiftR(et,5)
+ex <- bitwOr(ev,ew)
+ey <- bitwAnd(ev,ew)
+ez <- bitwise_NOT(ey)
+fa <- bitwAnd(ex,ez)
+fb <- bitwOr(eu,fa)
+fc <- bitwAnd(eu,fa)
+fd <- bitwise_NOT(fc)
+fe <- bitwAnd(fb,fd)
+ff <- bitwOr(et,fe)
+fg <- bitwAnd(et,fe)
+fh <- bitwise_NOT(fg)
+fi <- bitwAnd(ff,fh)
+fj <- bitwAnd(1,fi)
+fk <- bitwShiftL(eq,1)
+fl <- bitwOr(fk,fj)
+fm <- bitwShiftR(et,1)
+fn <- bitwShiftL(fj,15)
+fo <- bitwOr(fm,fn)
+fp <- bitwShiftR(fo,2)
+fq <- bitwShiftR(fo,3)
+fr <- bitwShiftR(fo,5)
+fs <- bitwOr(fq,fr)
+ft <- bitwAnd(fq,fr)
+fu <- bitwise_NOT(ft)
+fv <- bitwAnd(fs,fu)
+fw <- bitwOr(fp,fv)
+fx <- bitwAnd(fp,fv)
+fy <- bitwise_NOT(fx)
+fz <- bitwAnd(fw,fy)
+ga <- bitwOr(fo,fz)
+gb <- bitwAnd(fo,fz)
+gc <- bitwise_NOT(gb)
+gd <- bitwAnd(ga,gc)
+ge <- bitwAnd(1,gd)
+gf <- bitwShiftL(fl,1)
+gg <- bitwOr(gf,ge)
+gh <- bitwShiftR(fo,1)
+gi <- bitwShiftL(ge,15)
+gj <- bitwOr(gh,gi)
+gk <- bitwShiftR(gj,2)
+gl <- bitwShiftR(gj,3)
+gm <- bitwShiftR(gj,5)
+gn <- bitwOr(gl,gm)
+go <- bitwAnd(gl,gm)
+gp <- bitwise_NOT(go)
+gq <- bitwAnd(gn,gp)
+gr <- bitwOr(gk,gq)
+gs <- bitwAnd(gk,gq)
+gt <- bitwise_NOT(gs)
+gu <- bitwAnd(gr,gt)
+gv <- bitwOr(gj,gu)
+gw <- bitwAnd(gj,gu)
+gx <- bitwise_NOT(gw)
+gy <- bitwAnd(gv,gx)
+gz <- bitwAnd(1,gy)
+ha <- bitwShiftL(gg,1)
+hb <- bitwOr(ha,gz)
+hc <- bitwShiftR(gj,1)
+hd <- bitwShiftL(gz,15)
+he <- bitwOr(hc,hd)
+hf <- bitwShiftR(he,2)
+hg <- bitwShiftR(he,3)
+hh <- bitwShiftR(he,5)
+hi <- bitwOr(hg,hh)
+hj <- bitwAnd(hg,hh)
+hk <- bitwise_NOT(hj)
+hl <- bitwAnd(hi,hk)
+hm <- bitwOr(hf,hl)
+hn <- bitwAnd(hf,hl)
+ho <- bitwise_NOT(hn)
+hp <- bitwAnd(hm,ho)
+hq <- bitwOr(he,hp)
+hr <- bitwAnd(he,hp)
+hs <- bitwise_NOT(hr)
+ht <- bitwAnd(hq,hs)
+hu <- bitwAnd(1,ht)
+hv <- bitwShiftL(hb,1)
+hw <- bitwOr(hv,hu)
+hx <- bitwShiftR(he,1)
+hy <- bitwShiftL(hu,15)
+hz <- bitwOr(hx,hy)
+ia <- bitwShiftR(hz,2)
+ib <- bitwShiftR(hz,3)
+ic <- bitwShiftR(hz,5)
+id <- bitwOr(ib,ic)
+ie <- bitwAnd(ib,ic)
+zz <- bitwise_NOT(ie)
+ig <- bitwAnd(id,zz)
+ih <- bitwOr(ia,ig)
+ii <- bitwAnd(ia,ig)
+ij <- bitwise_NOT(ii)
+ik <- bitwAnd(ih,ij)
+il <- bitwOr(hz,ik)
+im <- bitwAnd(hz,ik)
+yy <- bitwise_NOT(im)
+io <- bitwAnd(il,yy)
+ip <- bitwAnd(1,io)
+iq <- bitwShiftL(hw,1)
+ir <- bitwOr(iq,ip)
+is <- bitwShiftR(hz,1)
+it <- bitwShiftL(ip,15)
+iu <- bitwOr(is,it)
+iv <- bitwShiftR(iu,2)
+iw <- bitwShiftR(iu,3)
+ix <- bitwShiftR(iu,5)
+iy <- bitwOr(iw,ix)
+iz <- bitwAnd(iw,ix)
+ja <- bitwise_NOT(iz)
+jb <- bitwAnd(iy,ja)
+jc <- bitwOr(iv,jb)
+jd <- bitwAnd(iv,jb)
+je <- bitwise_NOT(jd)
+jf <- bitwAnd(jc,je)
+jg <- bitwOr(iu,jf)
+jh <- bitwAnd(iu,jf)
+ji <- bitwise_NOT(jh)
+jj <- bitwAnd(jg,ji)
+jk <- bitwAnd(1,jj)
+jl <- bitwShiftL(ir,1)
+jm <- bitwOr(jl,jk)
+jn <- bitwShiftR(iu,1)
+jo <- bitwShiftL(jk,15)
+jp <- bitwOr(jn,jo)
+jq <- bitwShiftR(jp,2)
+jr <- bitwShiftR(jp,3)
+js <- bitwShiftR(jp,5)
+jt <- bitwOr(jr,js)
+ju <- bitwAnd(jr,js)
+jv <- bitwise_NOT(ju)
+jw <- bitwAnd(jt,jv)
+jx <- bitwOr(jq,jw)
+jy <- bitwAnd(jq,jw)
+jz <- bitwise_NOT(jy)
+ka <- bitwAnd(jx,jz)
+kb <- bitwOr(jp,ka)
+kc <- bitwAnd(jp,ka)
+kd <- bitwise_NOT(kc)
+ke <- bitwAnd(kb,kd)
+kf <- bitwAnd(1,ke)
+kg <- bitwShiftL(jm,1)
+kh <- bitwOr(kg,kf)
+ki <- bitwShiftR(jp,1)
+kj <- bitwShiftL(kf,15)
+kk <- bitwOr(ki,kj)
+kl <- bitwShiftR(kk,2)
+km <- bitwShiftR(kk,3)
+kn <- bitwShiftR(kk,5)
+ko <- bitwOr(km,kn)
+kp <- bitwAnd(km,kn)
+kq <- bitwise_NOT(kp)
+kr <- bitwAnd(ko,kq)
+ks <- bitwOr(kl,kr)
+kt <- bitwAnd(kl,kr)
+ku <- bitwise_NOT(kt)
+kv <- bitwAnd(ks,ku)
+kw <- bitwOr(kk,kv)
+kx <- bitwAnd(kk,kv)
+ky <- bitwise_NOT(kx)
+kz <- bitwAnd(kw,ky)
+la <- bitwAnd(1,kz)
+lb <- bitwShiftL(kh,1)
+lc <- bitwOr(lb,la)
+ld <- bitwShiftR(kk,1)
+le <- bitwShiftL(la,15)
+lf <- bitwOr(ld,le)
+lg <- bitwShiftR(lf,2)
+lh <- bitwShiftR(lf,3)
+li <- bitwShiftR(lf,5)
+lj <- bitwOr(lh,li)
+lk <- bitwAnd(lh,li)
+ll <- bitwise_NOT(lk)
+lm <- bitwAnd(lj,ll)
+ln <- bitwOr(lg,lm)
+lo <- bitwAnd(lg,lm)
+lp <- bitwise_NOT(lo)
+lq <- bitwAnd(ln,lp)
+lr <- bitwOr(lf,lq)
+ls <- bitwAnd(lf,lq)
+lt <- bitwise_NOT(ls)
+lu <- bitwAnd(lr,lt)
+lv <- bitwAnd(1,lu)
+lw <- bitwShiftL(lc,1)
+lx <- bitwOr(lw,lv)
+ly <- bitwShiftR(lf,1)
+lz <- bitwShiftL(lv,15)
+ma <- bitwOr(ly,lz)
+a <- lx
+```
+
+```{r}
+print(paste("The value of a is", a))
+```
+
+--- Part Two ---
+
+Now, take the signal you got on wire a, override wire b to that signal, and reset the other wires (including wire a). What new signal is ultimately provided to wire a?
+
+
+```{r}
+b <- 3176
+c <- 0
+d <- bitwShiftR(b,2)
+e <- bitwShiftR(b,3)
+f <- bitwShiftR(b,5)
+g <- bitwOr(e,f)
+h <- bitwAnd(e,f)
+i <- bitwise_NOT(h)
+j <- bitwAnd(g,i)
+k <- bitwOr(d,j)
+l <- bitwAnd(d,j)
+m <- bitwise_NOT(l)
+n <- bitwAnd(k,m)
+o <- bitwOr(b,n)
+p <- bitwAnd(b,n)
+q <- bitwise_NOT(p)
+r <- bitwAnd(o,q)
+s <- bitwAnd(1,r)
+t <- bitwShiftL(c,1)
+u <- bitwOr(t,s)
+v <- bitwShiftR(b,1)
+w <- bitwShiftL(s,15)
+x <- bitwOr(v,w)
+y <- bitwShiftR(x,2)
+z <- bitwShiftR(x,3)
+aa <- bitwShiftR(x,5)
+ab <- bitwOr(z,aa)
+ac <- bitwAnd(z,aa)
+ad <- bitwise_NOT(ac)
+ae <- bitwAnd(ab,ad)
+af <- bitwOr(y,ae)
+ag <- bitwAnd(y,ae)
+ah <- bitwise_NOT(ag)
+ai <- bitwAnd(af,ah)
+aj <- bitwOr(x,ai)
+ak <- bitwAnd(x,ai)
+al <- bitwise_NOT(ak)
+am <- bitwAnd(aj,al)
+an <- bitwAnd(1,am)
+ao <- bitwShiftL(u,1)
+ap <- bitwOr(ao,an)
+aq <- bitwShiftR(x,1)
+ar <- bitwShiftL(an,15)
+as <- bitwOr(aq,ar)
+at <- bitwShiftR(as,2)
+au <- bitwShiftR(as,3)
+av <- bitwShiftR(as,5)
+aw <- bitwOr(au,av)
+ax <- bitwAnd(au,av)
+ay <- bitwise_NOT(ax)
+az <- bitwAnd(aw,ay)
+ba <- bitwOr(at,az)
+bb <- bitwAnd(at,az)
+bc <- bitwise_NOT(bb)
+bd <- bitwAnd(ba,bc)
+be <- bitwOr(as,bd)
+bf <- bitwAnd(as,bd)
+bg <- bitwise_NOT(bf)
+bh <- bitwAnd(be,bg)
+bi <- bitwAnd(1,bh)
+bj <- bitwShiftL(ap,1)
+bk <- bitwOr(bj,bi)
+bl <- bitwShiftR(as,1)
+bm <- bitwShiftL(bi,15)
+bn <- bitwOr(bl,bm)
+bo <- bitwShiftR(bn,2)
+bp <- bitwShiftR(bn,3)
+bq <- bitwShiftR(bn,5)
+br <- bitwOr(bp,bq)
+bs <- bitwAnd(bp,bq)
+bt <- bitwise_NOT(bs)
+bu <- bitwAnd(br,bt)
+bv <- bitwOr(bo,bu)
+bw <- bitwAnd(bo,bu)
+bx <- bitwise_NOT(bw)
+by <- bitwAnd(bv,bx)
+bz <- bitwOr(bn,by)
+ca <- bitwAnd(bn,by)
+cb <- bitwise_NOT(ca)
+cc <- bitwAnd(bz,cb)
+cd <- bitwAnd(1,cc)
+ce <- bitwShiftL(bk,1)
+cf <- bitwOr(ce,cd)
+cg <- bitwShiftR(bn,1)
+ch <- bitwShiftL(cd,15)
+ci <- bitwOr(cg,ch)
+cj <- bitwShiftR(ci,2)
+ck <- bitwShiftR(ci,3)
+cl <- bitwShiftR(ci,5)
+cm <- bitwOr(ck,cl)
+cn <- bitwAnd(ck,cl)
+co <- bitwise_NOT(cn)
+cp <- bitwAnd(cm,co)
+cq <- bitwOr(cj,cp)
+cr <- bitwAnd(cj,cp)
+cs <- bitwise_NOT(cr)
+ct <- bitwAnd(cq,cs)
+cu <- bitwOr(ci,ct)
+cv <- bitwAnd(ci,ct)
+cw <- bitwise_NOT(cv)
+cx <- bitwAnd(cu,cw)
+cy <- bitwAnd(1,cx)
+cz <- bitwShiftL(cf,1)
+da <- bitwOr(cz,cy)
+db <- bitwShiftR(ci,1)
+dc <- bitwShiftL(cy,15)
+dd <- bitwOr(db,dc)
+de <- bitwShiftR(dd,2)
+df <- bitwShiftR(dd,3)
+dg <- bitwShiftR(dd,5)
+dh <- bitwOr(df,dg)
+di <- bitwAnd(df,dg)
+dj <- bitwise_NOT(di)
+dk <- bitwAnd(dh,dj)
+dl <- bitwOr(de,dk)
+dm <- bitwAnd(de,dk)
+dn <- bitwise_NOT(dm)
+do <- bitwAnd(dl,dn)
+dp <- bitwOr(dd,do)
+dq <- bitwAnd(dd,do)
+dr <- bitwise_NOT(dq)
+ds <- bitwAnd(dp,dr)
+dt <- bitwAnd(1,ds)
+du <- bitwShiftL(da,1)
+dv <- bitwOr(du,dt)
+dw <- bitwShiftR(dd,1)
+dx <- bitwShiftL(dt,15)
+dy <- bitwOr(dw,dx)
+dz <- bitwShiftR(dy,2)
+ea <- bitwShiftR(dy,3)
+eb <- bitwShiftR(dy,5)
+ec <- bitwOr(ea,eb)
+ed <- bitwAnd(ea,eb)
+ee <- bitwise_NOT(ed)
+ef <- bitwAnd(ec,ee)
+eg <- bitwOr(dz,ef)
+eh <- bitwAnd(dz,ef)
+ei <- bitwise_NOT(eh)
+ej <- bitwAnd(eg,ei)
+ek <- bitwOr(dy,ej)
+el <- bitwAnd(dy,ej)
+em <- bitwise_NOT(el)
+en <- bitwAnd(ek,em)
+eo <- bitwAnd(1,en)
+ep <- bitwShiftL(dv,1)
+eq <- bitwOr(ep,eo)
+er <- bitwShiftR(dy,1)
+es <- bitwShiftL(eo,15)
+et <- bitwOr(er,es)
+eu <- bitwShiftR(et,2)
+ev <- bitwShiftR(et,3)
+ew <- bitwShiftR(et,5)
+ex <- bitwOr(ev,ew)
+ey <- bitwAnd(ev,ew)
+ez <- bitwise_NOT(ey)
+fa <- bitwAnd(ex,ez)
+fb <- bitwOr(eu,fa)
+fc <- bitwAnd(eu,fa)
+fd <- bitwise_NOT(fc)
+fe <- bitwAnd(fb,fd)
+ff <- bitwOr(et,fe)
+fg <- bitwAnd(et,fe)
+fh <- bitwise_NOT(fg)
+fi <- bitwAnd(ff,fh)
+fj <- bitwAnd(1,fi)
+fk <- bitwShiftL(eq,1)
+fl <- bitwOr(fk,fj)
+fm <- bitwShiftR(et,1)
+fn <- bitwShiftL(fj,15)
+fo <- bitwOr(fm,fn)
+fp <- bitwShiftR(fo,2)
+fq <- bitwShiftR(fo,3)
+fr <- bitwShiftR(fo,5)
+fs <- bitwOr(fq,fr)
+ft <- bitwAnd(fq,fr)
+fu <- bitwise_NOT(ft)
+fv <- bitwAnd(fs,fu)
+fw <- bitwOr(fp,fv)
+fx <- bitwAnd(fp,fv)
+fy <- bitwise_NOT(fx)
+fz <- bitwAnd(fw,fy)
+ga <- bitwOr(fo,fz)
+gb <- bitwAnd(fo,fz)
+gc <- bitwise_NOT(gb)
+gd <- bitwAnd(ga,gc)
+ge <- bitwAnd(1,gd)
+gf <- bitwShiftL(fl,1)
+gg <- bitwOr(gf,ge)
+gh <- bitwShiftR(fo,1)
+gi <- bitwShiftL(ge,15)
+gj <- bitwOr(gh,gi)
+gk <- bitwShiftR(gj,2)
+gl <- bitwShiftR(gj,3)
+gm <- bitwShiftR(gj,5)
+gn <- bitwOr(gl,gm)
+go <- bitwAnd(gl,gm)
+gp <- bitwise_NOT(go)
+gq <- bitwAnd(gn,gp)
+gr <- bitwOr(gk,gq)
+gs <- bitwAnd(gk,gq)
+gt <- bitwise_NOT(gs)
+gu <- bitwAnd(gr,gt)
+gv <- bitwOr(gj,gu)
+gw <- bitwAnd(gj,gu)
+gx <- bitwise_NOT(gw)
+gy <- bitwAnd(gv,gx)
+gz <- bitwAnd(1,gy)
+ha <- bitwShiftL(gg,1)
+hb <- bitwOr(ha,gz)
+hc <- bitwShiftR(gj,1)
+hd <- bitwShiftL(gz,15)
+he <- bitwOr(hc,hd)
+hf <- bitwShiftR(he,2)
+hg <- bitwShiftR(he,3)
+hh <- bitwShiftR(he,5)
+hi <- bitwOr(hg,hh)
+hj <- bitwAnd(hg,hh)
+hk <- bitwise_NOT(hj)
+hl <- bitwAnd(hi,hk)
+hm <- bitwOr(hf,hl)
+hn <- bitwAnd(hf,hl)
+ho <- bitwise_NOT(hn)
+hp <- bitwAnd(hm,ho)
+hq <- bitwOr(he,hp)
+hr <- bitwAnd(he,hp)
+hs <- bitwise_NOT(hr)
+ht <- bitwAnd(hq,hs)
+hu <- bitwAnd(1,ht)
+hv <- bitwShiftL(hb,1)
+hw <- bitwOr(hv,hu)
+hx <- bitwShiftR(he,1)
+hy <- bitwShiftL(hu,15)
+hz <- bitwOr(hx,hy)
+ia <- bitwShiftR(hz,2)
+ib <- bitwShiftR(hz,3)
+ic <- bitwShiftR(hz,5)
+id <- bitwOr(ib,ic)
+ie <- bitwAnd(ib,ic)
+zz <- bitwise_NOT(ie)
+ig <- bitwAnd(id,zz)
+ih <- bitwOr(ia,ig)
+ii <- bitwAnd(ia,ig)
+ij <- bitwise_NOT(ii)
+ik <- bitwAnd(ih,ij)
+il <- bitwOr(hz,ik)
+im <- bitwAnd(hz,ik)
+yy <- bitwise_NOT(im)
+io <- bitwAnd(il,yy)
+ip <- bitwAnd(1,io)
+iq <- bitwShiftL(hw,1)
+ir <- bitwOr(iq,ip)
+is <- bitwShiftR(hz,1)
+it <- bitwShiftL(ip,15)
+iu <- bitwOr(is,it)
+iv <- bitwShiftR(iu,2)
+iw <- bitwShiftR(iu,3)
+ix <- bitwShiftR(iu,5)
+iy <- bitwOr(iw,ix)
+iz <- bitwAnd(iw,ix)
+ja <- bitwise_NOT(iz)
+jb <- bitwAnd(iy,ja)
+jc <- bitwOr(iv,jb)
+jd <- bitwAnd(iv,jb)
+je <- bitwise_NOT(jd)
+jf <- bitwAnd(jc,je)
+jg <- bitwOr(iu,jf)
+jh <- bitwAnd(iu,jf)
+ji <- bitwise_NOT(jh)
+jj <- bitwAnd(jg,ji)
+jk <- bitwAnd(1,jj)
+jl <- bitwShiftL(ir,1)
+jm <- bitwOr(jl,jk)
+jn <- bitwShiftR(iu,1)
+jo <- bitwShiftL(jk,15)
+jp <- bitwOr(jn,jo)
+jq <- bitwShiftR(jp,2)
+jr <- bitwShiftR(jp,3)
+js <- bitwShiftR(jp,5)
+jt <- bitwOr(jr,js)
+ju <- bitwAnd(jr,js)
+jv <- bitwise_NOT(ju)
+jw <- bitwAnd(jt,jv)
+jx <- bitwOr(jq,jw)
+jy <- bitwAnd(jq,jw)
+jz <- bitwise_NOT(jy)
+ka <- bitwAnd(jx,jz)
+kb <- bitwOr(jp,ka)
+kc <- bitwAnd(jp,ka)
+kd <- bitwise_NOT(kc)
+ke <- bitwAnd(kb,kd)
+kf <- bitwAnd(1,ke)
+kg <- bitwShiftL(jm,1)
+kh <- bitwOr(kg,kf)
+ki <- bitwShiftR(jp,1)
+kj <- bitwShiftL(kf,15)
+kk <- bitwOr(ki,kj)
+kl <- bitwShiftR(kk,2)
+km <- bitwShiftR(kk,3)
+kn <- bitwShiftR(kk,5)
+ko <- bitwOr(km,kn)
+kp <- bitwAnd(km,kn)
+kq <- bitwise_NOT(kp)
+kr <- bitwAnd(ko,kq)
+ks <- bitwOr(kl,kr)
+kt <- bitwAnd(kl,kr)
+ku <- bitwise_NOT(kt)
+kv <- bitwAnd(ks,ku)
+kw <- bitwOr(kk,kv)
+kx <- bitwAnd(kk,kv)
+ky <- bitwise_NOT(kx)
+kz <- bitwAnd(kw,ky)
+la <- bitwAnd(1,kz)
+lb <- bitwShiftL(kh,1)
+lc <- bitwOr(lb,la)
+ld <- bitwShiftR(kk,1)
+le <- bitwShiftL(la,15)
+lf <- bitwOr(ld,le)
+lg <- bitwShiftR(lf,2)
+lh <- bitwShiftR(lf,3)
+li <- bitwShiftR(lf,5)
+lj <- bitwOr(lh,li)
+lk <- bitwAnd(lh,li)
+ll <- bitwise_NOT(lk)
+lm <- bitwAnd(lj,ll)
+ln <- bitwOr(lg,lm)
+lo <- bitwAnd(lg,lm)
+lp <- bitwise_NOT(lo)
+lq <- bitwAnd(ln,lp)
+lr <- bitwOr(lf,lq)
+ls <- bitwAnd(lf,lq)
+lt <- bitwise_NOT(ls)
+lu <- bitwAnd(lr,lt)
+lv <- bitwAnd(1,lu)
+lw <- bitwShiftL(lc,1)
+lx <- bitwOr(lw,lv)
+ly <- bitwShiftR(lf,1)
+lz <- bitwShiftL(lv,15)
+ma <- bitwOr(ly,lz)
+a <- lx
+```
+
+```{r}
+print(paste("The value of a is", a))
+```

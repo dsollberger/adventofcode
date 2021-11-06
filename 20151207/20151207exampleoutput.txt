@@ -1,0 +1,8 @@
+d <- bitwAnd(x,y)
+e <- bitwOr(x,y)
+f <- bitwShiftL(x,2)
+g <- bitwShiftR(y,2)
+h <- bitwise_NOT(x)
+i <- bitwise_NOT(y)
+x <- 123
+y <- 456

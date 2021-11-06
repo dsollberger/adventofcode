@@ -1,0 +1,182 @@
+---
+title: "Day 12"
+author: "Derek Sollberger"
+date: "11/5/2021"
+output: html_document
+---
+
+```{r}
+library("rjson")
+library("tidyverse")
+```
+
+
+--- Day 12: JSAbacusFramework.io ---
+
+Santa's Accounting-Elves need help balancing the books after a recent order. Unfortunately, their accounting software uses a peculiar storage format. That's where you come in.
+
+They have a JSON document which contains a variety of things: arrays ([1,2,3]), objects ({"a":1, "b":2}), numbers, and strings. Your first job is to simply find all of the numbers throughout the document and add them together.
+
+For example:
+
+    [1,2,3] and {"a":2,"b":4} both have a sum of 6.
+    [[[3]]] and {"a":{"b":4},"c":-1} both have a sum of 3.
+    {"a":[-1,1]} and [-1,{"a":1}] both have a sum of 0.
+    [] and {} both have a sum of 0.
+
+You will not encounter any strings containing numbers.
+
+What is the sum of all numbers in the document?
+
+```{r}
+# does str_extract() work here?
+# https://stackoverflow.com/questions/53818952/extracting-digits-after-only-with-negative-number
+sum(as.numeric(str_extract_all("[1,2,3]", "-?[0-9]+")[[1]]))
+sum(as.numeric(str_extract_all("{\"a\":2,\"b\":4}", "-?[0-9]+")[[1]]))
+sum(as.numeric(str_extract_all("{\"a\":{\"b\":4},\"c\":-1}", "-?[0-9]+")[[1]]))
+sum(as.numeric(str_extract_all("{\"a\":[-1,1]}", "-?[0-9]+")[[1]]))
+sum(as.numeric(str_extract_all("[-1,{\"a\":1}]", "-?[0-9]+")[[1]]))
+sum(as.numeric(str_extract_all("[]", "-?[0-9]+")[[1]]))
+sum(as.numeric(str_extract_all("{}", "-?[0-9]+")[[1]]))
+```
+```{r}
+# helper function
+sum_all_numbers <- function(this_string){
+  sum(as.numeric(str_extract_all(this_string, "-?[0-9]+")[[1]]))
+}
+```
+
+```{r}
+# load data
+todays_data <- readLines("20151212input.txt")
+```
+```{r}
+sum_all_numbers(todays_data)
+```
+--- Part Two ---
+
+Uh oh - the Accounting-Elves have realized that they double-counted everything red.
+
+Ignore any object (and all of its children) which has any property with the value "red". Do this only for objects ({...}), not arrays ([...]).
+
+    [1,2,3] still has a sum of 6.
+    [1,{"c":"red","b":2},3] now has a sum of 4, because the middle object is ignored.
+    {"d":"red","e":[1,2,3,4],"f":5} now has a sum of 0, because the entire structure is ignored.
+    [1,"red",5] has a sum of 6, because "red" in an array has no effect.
+
+```{r}
+todays_new_data <- todays_data
+object_list <- str_extract_all(todays_data, "(?<=\\{).+?(?=\\})")[[1]]
+```
+
+```{r}
+# exploring
+test_string <- "[1,{\"c\":\"red\",\"b\":2},3]"
+test_object <- str_extract_all(test_string, "(?<=\\{).+?(?=\\})")[[1]]
+str_detect(test_object, "red")
+# str_extract(test_object, "\\{(.*?)\\}")
+# str_replace(test_object, "\"c\":\"red\",\"b\":2", "")
+str_replace(test_string, test_object, "")
+sum_all_numbers("[1,{},3]")
+
+bracket_locations <- str_locate_all(test_string, "(?<=\\{).+?(?=\\})")[[1]]
+str_sub(test_string, bracket_locations[1, "start"], 
+        bracket_locations[1, "end"]) <- ""
+```
+
+
+
+
+
+Ran into NESTED objects, so I need to be clever
+
+```{r}
+# get string location for braces
+curly_braces_locations <- 
+  data.frame(str_locate_all(todays_data, "(?<=\\{).+?(?=\\})")[[1]])
+curly_braces_locations <- curly_braces_locations %>%
+  mutate(object_length = end - start) %>%
+  arrange(object_length)
+```
+
+```{r, eval = FALSE}
+# will need string locations
+object_df <- data.frame(object_list)
+colnames(object_df) <- c("object")
+object_df <- object_df %>%
+  mutate(object_length = str_length(object)) %>%
+  arrange(object_length)
+```
+
+
+```{r, eval = FALSE}
+# early draft
+n <- length(object_list)
+for(i in 1:n){
+  if(str_detect(object_list[i], "red")){
+    todays_new_data <- str_replace(todays_new_data, object_list[i], "")
+  }
+}
+```
+
+```{r}
+# todays_new_data <- test_object
+todays_new_data <- todays_data
+n <- length(object_list)
+for(i in 1:n){
+  curly_braces_locations <- 
+    data.frame(str_locate_all(todays_new_data, "(?<=\\{).+?(?=\\})")[[1]])
+  curly_braces_locations <- curly_braces_locations %>%
+    mutate(object_length = end - start) %>%
+    arrange(desc(object_length))
+    # arrange(object_length)
+  
+  # print(nrow(curly_braces_locations))
+  # print(paste("red attributes:",
+              # str_count(todays_new_data, "red")))
+  
+  for(j in 1:nrow(curly_braces_locations)){
+    this_object <- str_sub(todays_new_data, 
+                          curly_braces_locations[j, "start"], 
+                          curly_braces_locations[j, "end"])
+    if(str_detect(this_object, "red")){
+      # todays_new_data <- str_replace(todays_new_data,
+      #                                fixed(this_object),
+      #                                "")
+      str_sub(todays_new_data,
+              curly_braces_locations[j, "start"] - 1,
+              curly_braces_locations[j, "end"] + 1) <- ""
+      break
+    }
+  }
+  # print(str_length(todays_new_data))
+}  
+```
+
+
+```{r}
+write_lines(todays_new_data, "20151212output.txt")
+```
+
+
+```{r}
+str_length(todays_data)
+str_length(todays_new_data)
+```
+```{r}
+sum_all_numbers(todays_new_data)
+#90360 was too low
+#92350 was too low
+```
+
+---
+
+```{r}
+todays_data_json <- fromJSON(file = "20151212input.json")
+```
+
+```{r}
+# print(todays_data)
+# json_df <- data.frame(todays_data_json)
+```
+

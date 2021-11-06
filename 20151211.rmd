@@ -1,0 +1,234 @@
+---
+title: "Day 11"
+author: "Derek Sollberger"
+date: "11/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 11: Corporate Policy ---
+
+Santa's previous password expired, and he needs help choosing a new one.
+
+To help him remember his new password after the old one expires, Santa has devised a method of coming up with a password based on the previous one. Corporate policy dictates that passwords must be exactly eight lowercase letters (for security reasons), so he finds his new password by incrementing his old password string repeatedly until it is valid.
+
+Incrementing is just like counting with numbers: xx, xy, xz, ya, yb, and so on. Increase the rightmost letter one step; if it was z, it wraps around to a, and repeat with the next letter to the left until one doesn't wrap around.
+
+Unfortunately for Santa, a new Security-Elf recently started, and he has imposed some additional password requirements:
+
+    Passwords must include one increasing straight of at least three letters, like abc, bcd, cde, and so on, up to xyz. They cannot skip letters; abd doesn't count.
+    Passwords may not contain the letters i, o, or l, as these letters can be mistaken for other characters and are therefore confusing.
+    Passwords must contain at least two different, non-overlapping pairs of letters, like aa, bb, or zz.
+
+For example:
+
+    hijklmmn meets the first requirement (because it contains the straight hij) but fails the second requirement requirement (because it contains i and l).
+    abbceffg meets the third requirement (because it repeats bb and ff) but fails the first requirement.
+    abbcegjk fails the third requirement, because it only has one double letter (bb).
+    The next password after abcdefgh is abcdffaa.
+    The next password after ghijklmn is ghjaabcc, because you eventually skip all the passwords that start with ghi..., since i is not allowed.
+
+Given Santa's current password (your puzzle input), what should his next password be?
+
+Your puzzle input is hepxcrrq.
+
+```{r}
+# helper function
+increment_letter <- function(this_letter){
+  letters[which(letters == this_letter) + 1]
+}
+
+# increment_letter("a")
+# increment_letter("b")
+```
+
+```{r}
+# helper function
+increasing_sequence_check <- function(this_string){
+  n <- str_length(this_string)
+  pass_check <- FALSE
+  this_string_split <- str_split(this_string, "")[[1]]
+  
+  for(i in 1:(n-2)){
+    num1 <- which(letters == this_string_split[i])
+    num2 <- which(letters == this_string_split[i+1])
+    num3 <- which(letters == this_string_split[i+2])
+    
+    if((num2 - num1) == 1){
+      if((num3 - num2) == 1){
+        pass_check <- TRUE
+      }
+    }
+  }
+  
+  # return
+  pass_check
+}
+
+# increasing_sequence_check("abc")
+# increasing_sequence_check("abd")
+# increasing_sequence_check("hijklmmn")
+# increasing_sequence_check("abbceffg")
+```
+
+```{r}
+# helper function
+confusing_letters_check <- function(this_string){
+  pass_check <- TRUE #initialization
+  this_string_split <- str_split(this_string, "")[[1]]
+  
+  if("i" %in% this_string_split){ 
+    pass_check <- FALSE
+  }else{
+    if("o" %in% this_string_split){
+      pass_check <- FALSE
+    }else{
+      if("l" %in% this_string_split){
+        pass_check <- FALSE
+      }
+    }
+  }
+  
+  # return
+  pass_check
+}
+
+# confusing_letters_check("abcdefgh")
+# confusing_letters_check("hijklmmn")
+```
+
+```{r}
+# helper function
+doubles_check <- function(this_string){
+  n <- str_length(this_string)
+  pass_check <- FALSE
+  this_string_split <- str_split(this_string, "")[[1]]
+  
+  for(i in 1:(n-3)){
+    num1 <- which(letters == this_string_split[i])
+    num2 <- which(letters == this_string_split[i+1])
+    
+    if(num1 == num2){
+      for(j in (i+2):(n-1)){
+        num3 <- which(letters == this_string_split[j])
+        num4 <- which(letters == this_string_split[j+1])
+        if(num3 == num4){
+          pass_check <- TRUE
+        }
+      }
+    }
+  }
+  
+  # return
+  pass_check
+}
+
+# doubles_check("abbceffg")
+# doubles_check("abbcegjk")
+```
+
+```{r}
+# helper function
+all_3_checks <- function(this_string){
+  pass_check <- FALSE
+  if(confusing_letters_check(this_string)){
+    if(doubles_check(this_string)){
+      if(increasing_sequence_check(this_string)){
+        pass_check <- TRUE
+      }
+    }
+  }
+  
+  # return
+  pass_check
+}
+
+# all_3_checks("abcdefgh")
+# all_3_checks("abcdffaa")
+```
+
+```{r}
+increment_password <- function(this_string){
+  this_string_split <- str_split(this_string, "")[[1]]
+  
+  # increment
+  if(this_string_split[8] != "z"){
+    this_string_split[8] <- increment_letter(this_string_split[8])
+  }else{
+    this_string_split[8] <- "a"
+    if(this_string_split[7] != "z"){
+      this_string_split[7] <- increment_letter(this_string_split[7])
+    }else{
+      this_string_split[7] <- "a"
+      if(this_string_split[6] != "z"){
+        this_string_split[6] <- increment_letter(this_string_split[6])
+      }else{
+        this_string_split[6] <- "a"
+        if(this_string_split[5] != "z"){
+          this_string_split[5] <- increment_letter(this_string_split[5])
+        }else{
+          this_string_split[5] <- "a"
+          if(this_string_split[4] != "z"){
+            this_string_split[4] <- increment_letter(this_string_split[4])
+          }else{
+            this_string_split[4] <- "a"
+            if(this_string_split[3] != "z"){
+              this_string_split[3] <- increment_letter(this_string_split[3])
+            }else{
+              this_string_split[3] <- "a"
+              if(this_string_split[2] != "z"){
+                this_string_split[2] <- increment_letter(this_string_split[2])
+              }else{
+                this_string_split[2] <- "a"
+                if(this_string_split[1] != "z"){
+                  this_string_split[1] <- increment_letter(this_string_split[1])
+                }else{
+                  break
+                }}}}}}}}
+  #return
+  paste0(this_string_split, collapse = "")
+}
+
+# increment_password("abcdefgh")
+# increment_password("yzzzzzzz")
+```
+
+
+```{r}
+# main function
+next_password <- function(this_string){
+  while(this_string != "zzzzzzzz"){
+    if(all_3_checks(this_string)){ 
+      break
+    }else{
+      this_string <- increment_password(this_string)
+    }
+  }
+  
+  # return
+  this_string
+}
+
+# next_password("abcdefgh")
+# next_password("ghijklmn") # takes a long time
+```
+```{r}
+next_password("hepxcrrq")
+```
+--- Part Two ---
+
+Santa's password expired again. What's the next one?
+
+```{r}
+increment_password("hepxxyzz")
+next_password("hepxxzaa")
+```
+
+
+
+
+

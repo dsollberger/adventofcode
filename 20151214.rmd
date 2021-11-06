@@ -1,0 +1,215 @@
+---
+title: "Day 14"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+--- Day 14: Reindeer Olympics ---
+
+This year is the Reindeer Olympics! Reindeer can fly at high speeds, but must rest occasionally to recover their energy. Santa would like to know which of his reindeer is fastest, and so he has them race.
+
+Reindeer can only either be flying (always at their top speed) or resting (not moving at all), and always spend whole seconds in either state.
+
+For example, suppose you have the following Reindeer:
+
+    Comet can fly 14 km/s for 10 seconds, but then must rest for 127 seconds.
+    Dancer can fly 16 km/s for 11 seconds, but then must rest for 162 seconds.
+
+After one second, Comet has gone 14 km, while Dancer has gone 16 km. After ten seconds, Comet has gone 140 km, while Dancer has gone 160 km. On the eleventh second, Comet begins resting (staying at 140 km), and Dancer continues on for a total distance of 176 km. On the 12th second, both reindeer are resting. They continue to rest until the 138th second, when Comet flies for another ten seconds. On the 174th second, Dancer flies for another 11 seconds.
+
+In this example, after the 1000th second, both reindeer are resting, and Comet is in the lead at 1120 km (poor Dancer has only gotten 1056 km by that point). So, in this situation, Comet would win (if the race ended at 1000 seconds).
+
+Given the descriptions of each reindeer (in your puzzle input), after exactly 2503 seconds, what distance has the winning reindeer traveled?
+
+```
+Vixen can fly 19 km/s for 7 seconds, but then must rest for 124 seconds.
+Rudolph can fly 3 km/s for 15 seconds, but then must rest for 28 seconds.
+Donner can fly 19 km/s for 9 seconds, but then must rest for 164 seconds.
+Blitzen can fly 19 km/s for 9 seconds, but then must rest for 158 seconds.
+Comet can fly 13 km/s for 7 seconds, but then must rest for 82 seconds.
+Cupid can fly 25 km/s for 6 seconds, but then must rest for 145 seconds.
+Dasher can fly 14 km/s for 3 seconds, but then must rest for 38 seconds.
+Dancer can fly 3 km/s for 16 seconds, but then must rest for 37 seconds.
+Prancer can fly 25 km/s for 6 seconds, but then must rest for 143 seconds.
+```
+
+```{r}
+reindeer_distance <- function(time, velocity = 19, 
+                              run_time = 7, rest_time = 124){
+  run_time_tracker <- run_time
+  rest_time_tracker <- rest_time + 1
+  distance <- 0
+  
+  while(time > 0){
+    time <- time - 1
+    
+    if(run_time_tracker > 0){
+      distance <- distance + velocity
+      run_time_tracker <- run_time_tracker - 1
+    }
+    
+    if(run_time_tracker == 0 & rest_time_tracker > 0){
+      rest_time_tracker <- rest_time_tracker - 1
+    }
+    
+    if(rest_time_tracker == 0){
+      run_time_tracker  <- run_time
+      rest_time_tracker <- rest_time + 1
+    }
+    
+    # print(paste("time:", time))
+    # print(paste("distance:", distance))
+    # print(paste("run_time:", run_time_tracker))
+    # print(paste("rest_time:", rest_time_tracker))
+    # print(" ")
+
+  }
+  
+  #return
+  distance
+}
+
+reindeer_distance(1000, 14, 10, 127)
+reindeer_distance(1000, 16, 11, 162)
+```
+
+```{r}
+race_time_length <- 2503
+
+# Vixen can fly 19 km/s for 7 seconds, but then must rest for 124 seconds.
+Vixen_distance <- reindeer_distance(race_time_length, 19, 7, 124)
+# Rudolph can fly 3 km/s for 15 seconds, but then must rest for 28 seconds.
+Rudolph_distance <- reindeer_distance(race_time_length, 3, 15, 28)
+# Donner can fly 19 km/s for 9 seconds, but then must rest for 164 seconds.
+Donner_distance <- reindeer_distance(race_time_length, 19, 9, 164)
+# Blitzen can fly 19 km/s for 9 seconds, but then must rest for 158 seconds.
+Blitzen_distance <- reindeer_distance(race_time_length, 19, 9, 158)
+# Comet can fly 13 km/s for 7 seconds, but then must rest for 82 seconds.
+Comet_distance <- reindeer_distance(race_time_length, 13, 7, 82)
+# Cupid can fly 25 km/s for 6 seconds, but then must rest for 145 seconds.
+Cupid_distance <- reindeer_distance(race_time_length, 25, 6, 145)
+# Dasher can fly 14 km/s for 3 seconds, but then must rest for 38 seconds.
+Dasher_distance <- reindeer_distance(race_time_length, 14, 3, 38)
+# Dancer can fly 3 km/s for 16 seconds, but then must rest for 37 seconds.
+Dancer_distance <- reindeer_distance(race_time_length, 3, 16, 37)
+# Prancer can fly 25 km/s for 6 seconds, but then must rest for 143 seconds.
+Prancer_distance <- reindeer_distance(race_time_length, 25, 6, 143)
+```
+
+```{r}
+reindeer_times <- c(Blitzen_distance, Comet_distance, Cupid_distance,
+                    Dancer_distance, Dasher_distance, Donner_distance,
+                    Prancer_distance, Rudolph_distance, Vixen_distance)
+summary(reindeer_times)
+#2736 was too high
+```
+
+--- Part Two ---
+
+Seeing how reindeer move in bursts, Santa decides he's not pleased with the old scoring system.
+
+Instead, at the end of each second, he awards one point to the reindeer currently in the lead. (If there are multiple reindeer tied for the lead, they each get one point.) He keeps the traditional 2503 second time limit, of course, as doing otherwise would be entirely ridiculous.
+
+Given the example reindeer from above, after the first second, Dancer is in the lead and gets one point. He stays in the lead until several seconds into Comet's second burst: after the 140th second, Comet pulls into the lead and gets his first point. Of course, since Dancer had been in the lead for the 139 seconds before that, he has accumulated 139 points by the 140th second.
+
+After the 1000th second, Dancer has accumulated 689 points, while poor Comet, our old champion, only has 312. So, with the new scoring system, Dancer would win (if the race ended at 1000 seconds).
+
+Again given the descriptions of each reindeer (in your puzzle input), after exactly 2503 seconds, how many points does the winning reindeer have?
+
+```{r}
+reindeer_distance2 <- function(time, velocity = 19, 
+                              run_time = 7, rest_time = 124){
+  run_time_tracker <- run_time
+  # rest_time_tracker <- rest_time
+  rest_time_tracker <- rest_time + 1
+  distances <- rep(0, time)
+  
+  for(t in 2:time){
+    
+    if(run_time_tracker > 0){
+      distances[t] <- distances[t-1] + velocity
+      run_time_tracker <- run_time_tracker - 1
+    }
+    
+    if(run_time_tracker == 0 & rest_time_tracker > 0){
+      distances[t] <- distances[t-1]
+      rest_time_tracker <- rest_time_tracker - 1
+    }
+    
+    if(rest_time_tracker == 0){
+      distances[t] <- distances[t-1]
+      run_time_tracker  <- run_time
+      # rest_time_tracker <- rest_time
+      rest_time_tracker <- rest_time + 1
+    }
+  }
+  
+  #return
+  distances
+}
+```
+
+```{r}
+race_time_length <- 2503
+
+# Vixen can fly 19 km/s for 7 seconds, but then must rest for 124 seconds.
+Vixen_distances <- reindeer_distance2(race_time_length, 19, 7, 124)
+# Rudolph can fly 3 km/s for 15 seconds, but then must rest for 28 seconds.
+Rudolph_distances <- reindeer_distance2(race_time_length, 3, 15, 28)
+# Donner can fly 19 km/s for 9 seconds, but then must rest for 164 seconds.
+Donner_distances <- reindeer_distance2(race_time_length, 19, 9, 164)
+# Blitzen can fly 19 km/s for 9 seconds, but then must rest for 158 seconds.
+Blitzen_distances <- reindeer_distance2(race_time_length, 19, 9, 158)
+# Comet can fly 13 km/s for 7 seconds, but then must rest for 82 seconds.
+Comet_distances <- reindeer_distance2(race_time_length, 13, 7, 82)
+# Cupid can fly 25 km/s for 6 seconds, but then must rest for 145 seconds.
+Cupid_distances <- reindeer_distance2(race_time_length, 25, 6, 145)
+# Dasher can fly 14 km/s for 3 seconds, but then must rest for 38 seconds.
+Dasher_distances <- reindeer_distance2(race_time_length, 14, 3, 38)
+# Dancer can fly 3 km/s for 16 seconds, but then must rest for 37 seconds.
+Dancer_distances <- reindeer_distance2(race_time_length, 3, 16, 37)
+# Prancer can fly 25 km/s for 6 seconds, but then must rest for 143 seconds.
+Prancer_distances <- reindeer_distance2(race_time_length, 25, 6, 143)
+```
+
+```{r}
+reindeer_df <- data.frame(Blitzen_distances, Comet_distances, Cupid_distances,
+                          Dancer_distances, Dasher_distances, Donner_distances,
+                          Prancer_distances, Rudolph_distances, Vixen_distances)
+
+Blizten_points <- rep(0, race_time_length)
+Comet_points <- rep(0, race_time_length)
+Cupid_points <- rep(0, race_time_length)
+Dancer_points <- rep(0, race_time_length)
+Dasher_points <- rep(0, race_time_length)
+Donner_points <- rep(0, race_time_length)
+Prancer_points <- rep(0, race_time_length)
+Rudolph_points <- rep(0, race_time_length)
+Vixen_points <- rep(0, race_time_length)
+
+reindeer_point_df <- data.frame(Blizten_points, Comet_points,
+                                Cupid_points, Dancer_points,
+                                Dasher_points, Donner_points,
+                                Prancer_points, Rudolph_points, 
+                                Vixen_points)
+```
+
+```{r}
+for(t in 2:race_time_length){
+  leader_distance <- max(reindeer_df[t,])
+  assign_points <- rep(0, 9)
+  assign_points[reindeer_df[t,] == leader_distance] <- 1
+  reindeer_point_df[t,] <- assign_points
+}
+```
+
+```{r}
+colSums(reindeer_point_df)
+#1497 was too high
+```
+

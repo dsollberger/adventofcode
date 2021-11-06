@@ -1,0 +1,130 @@
+---
+title: "Day 9"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo= TRUE)
+library("combinat") #to make all permutations
+library("TSP") #traveling salesman
+```
+
+--- Day 9: All in a Single Night ---
+
+Every year, Santa manages to deliver all of his presents in a single night.
+
+This year, however, he has some new locations to visit; his elves have provided him the distances between every pair of locations. He can start and end at any two (different) locations he wants, but he must visit each location exactly once. What is the shortest distance he can travel to achieve this?
+
+For example, given the following distances:
+
+London to Dublin = 464
+London to Belfast = 518
+Dublin to Belfast = 141
+
+The possible routes are therefore:
+
+Dublin -> London -> Belfast = 982
+London -> Dublin -> Belfast = 605
+London -> Belfast -> Dublin = 659
+Dublin -> Belfast -> London = 659
+Belfast -> Dublin -> London = 605
+Belfast -> London -> Dublin = 982
+
+
+The shortest of these is London -> Dublin -> Belfast] <- 605, and so the answer is 605 in this example.
+
+What is the distance of the shortest route?
+
+
+```{r}
+distances <- matrix(rep(NA, 8*8), nrow = 8, ncol = 8)
+locations <- c("AlphaCentauri", "Snowdin", "Tambi", "Faerun", 
+                         "Norrath", "Straylight", "Tristram", "Arbre")
+rownames(distances) <- locations
+colnames(distances) <- locations
+```
+
+```{r}
+distances["AlphaCentauri", "Snowdin"] <- 66
+distances["AlphaCentauri", "Tambi"] <- 28
+distances["AlphaCentauri", "Faerun"] <- 60
+distances["AlphaCentauri", "Norrath"] <- 34
+distances["AlphaCentauri", "Straylight"] <- 34
+distances["AlphaCentauri", "Tristram"] <- 3
+distances["AlphaCentauri", "Arbre"] <- 108
+distances["Snowdin", "Tambi"] <- 22
+distances["Snowdin", "Faerun"] <- 12
+distances["Snowdin", "Norrath"] <- 91
+distances["Snowdin", "Straylight"] <- 121
+distances["Snowdin", "Tristram"] <- 111
+distances["Snowdin", "Arbre"] <- 71
+distances["Tambi", "Faerun"] <- 39
+distances["Tambi", "Norrath"] <- 113
+distances["Tambi", "Straylight"] <- 130
+distances["Tambi", "Tristram"] <- 35
+distances["Tambi", "Arbre"] <- 40
+distances["Faerun", "Norrath"] <- 63
+distances["Faerun", "Straylight"] <- 21
+distances["Faerun", "Tristram"] <- 57
+distances["Faerun", "Arbre"] <- 83
+distances["Norrath", "Straylight"] <- 9
+distances["Norrath", "Tristram"] <- 50
+distances["Norrath", "Arbre"] <- 60
+distances["Straylight", "Tristram"] <- 27
+distances["Straylight", "Arbre"] <- 81
+distances["Tristram", "Arbre"] <- 90
+```
+
+```{r}
+# make symmetric matrix
+# https://stackoverflow.com/questions/47082544/convert-uppertriangular-matrix-to-a-symmetric-matrix-in-r
+diag(distances) <- rep(0, 8)
+distances[lower.tri(distances, diag = FALSE)] <-
+  t(distances)[lower.tri(distances, diag = FALSE)]
+```
+
+
+```{r, eval = FALSE}
+# https://www.r-bloggers.com/2018/05/travelling-salesman-with-ggmap/
+distances_for_TSP <- TSP(distances, labels = locations)
+```
+
+```{r, eval = FALSE}
+solve_TSP(distances_for_TSP, method = "identity")
+```
+
+```{r, eval = FALSE}
+N <- 10000
+TSP_totals <- rep(9999, N)
+
+for(i in 1:N){
+  TSP_totals[i] <- tour_length(solve_TSP(distances_for_TSP, method = "nn"))
+}
+
+summary(TSP_totals)
+```
+```{r}
+all_routes <- permn(locations)
+N <- length(all_routes)
+```
+
+```{r}
+TSP_totals <- rep(9999, N)
+
+for(i in 1:N){
+  TSP_totals[i] <- distances[all_routes[[i]][1], all_routes[[i]][2] ] +
+    distances[all_routes[[i]][2], all_routes[[i]][3] ] + 
+    distances[all_routes[[i]][3], all_routes[[i]][4] ] +
+    distances[all_routes[[i]][4], all_routes[[i]][5] ] +
+    distances[all_routes[[i]][5], all_routes[[i]][6] ] +
+    distances[all_routes[[i]][6], all_routes[[i]][7] ] +
+    distances[all_routes[[i]][7], all_routes[[i]][8] ]
+}
+```
+
+```{r}
+summary(TSP_totals)
+```
+
