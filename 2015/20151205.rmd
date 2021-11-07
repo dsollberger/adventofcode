@@ -110,3 +110,92 @@ for(i in 1:N){
 print(paste0("There are ", nice_children, " nice children"))
 ```
 
+--- Part Two ---
+
+Realizing the error of his ways, Santa has switched to a better model of determining whether a string is naughty or nice. None of the old rules apply, as they are all clearly ridiculous.
+
+Now, a nice string is one with all of the following properties:
+
+    It contains a pair of any two letters that appears at least twice in the string without overlapping, like xyxy (xy) or aabcdefgaa (aa), but not like aaa (aa, but it overlaps).
+    It contains at least one letter which repeats with exactly one letter between them, like xyx, abcdefeghi (efe), or even aaa.
+
+For example:
+
+    qjhvhtzxzqqjkmpb is nice because is has a pair that appears twice (qj) and a letter that repeats with exactly one letter between them (zxz).
+    xxyxx is nice because it has a pair that appears twice and a letter that repeats with one between, even though the letters used by each rule overlap.
+    uurcxstgmygtbstg is naughty because it has a pair (tg) but no repeat with a single letter between them.
+    ieodomkazucvgmuy is naughty because it has a repeating letter with one between (odo), but no pair that appears twice.
+
+How many strings are nice under these new rules?
+
+```{r}
+two_doubles_check <- function(child_name){
+  pass_check <- FALSE
+  child_name_list <- stringr::str_split(child_name, "")[[1]]
+  n <- length(child_name_list)
+  
+  if(n > 3){
+    for(i in 1:(n-4)){
+      these_two_letters <- paste0(child_name_list[i],
+                                  child_name_list[i+1],
+                                  collapse = "")
+      rest_of_name <- paste0(child_name_list[i+2:n], collapse = "")
+      if(str_detect(rest_of_name, these_two_letters)){
+        pass_check <- TRUE
+        break
+      }
+    }
+  }
+  
+  #return
+  pass_check
+}
+
+two_doubles_check("xyxy")
+two_doubles_check("aabcdefgaa")
+two_doubles_check("aaa")
+```
+
+```{r}
+sandwich_check <- function(child_name){
+  pass_check <- FALSE
+  child_name_list <- stringr::str_split(child_name, "")[[1]]
+  n <- length(child_name_list)
+  
+  for(i in 1:(n-2)){
+    if(child_name_list[i] == child_name_list[i+2]){
+      pass_check <- TRUE
+      break
+    }
+  }
+  #return
+  pass_check
+}
+
+sandwich_check("xyz")
+sandwich_check("xyx")
+sandwich_check("aaa")
+sandwich_check("abcdefeghi")
+```
+```{r}
+two_doubles_check("qjhvhtzxzqqjkmpb") & sandwich_check("qjhvhtzxzqqjkmpb")
+two_doubles_check("xxyxx") & sandwich_check("xxyxx")
+two_doubles_check("uurcxstgmygtbstg") & sandwich_check("uurcxstgmygtbstg")
+two_doubles_check("ieodomkazucvgmuy") & sandwich_check("ieodomkazucvgmuy")
+```
+```{r}
+# main loop
+nice_children <- 0 #initialization
+N <- nrow(santas_list_raw)
+
+for(i in 1:N){
+  if(sandwich_check(santas_list_raw[i,1])){
+    if(two_doubles_check(santas_list_raw[i,1])){
+      nice_children <- nice_children + 1
+    }
+  }
+}
+
+print(paste0("There are ", nice_children, " nice children"))
+# 50 is not the answer
+```

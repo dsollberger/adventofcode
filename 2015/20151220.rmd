@@ -1,0 +1,131 @@
+---
+title: "Day 20"
+author: "Derek Sollberger"
+date: "11/6/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+--- Day 20: Infinite Elves and Infinite Houses ---
+
+To keep the Elves busy, Santa has them deliver some presents by hand, door-to-door. He sends them down a street with infinite houses numbered sequentially: 1, 2, 3, 4, 5, and so on.
+
+Each Elf is assigned a number, too, and delivers presents to houses based on that number:
+
+    The first Elf (number 1) delivers presents to every house: 1, 2, 3, 4, 5, ....
+    The second Elf (number 2) delivers presents to every second house: 2, 4, 6, 8, 10, ....
+    Elf number 3 delivers presents to every third house: 3, 6, 9, 12, 15, ....
+
+There are infinitely many Elves, numbered starting with 1. Each Elf delivers presents equal to ten times his or her number at each house.
+
+So, the first nine houses on the street end up like this:
+
+House 1 got 10 presents.
+House 2 got 30 presents.
+House 3 got 40 presents.
+House 4 got 70 presents.
+House 5 got 60 presents.
+House 6 got 120 presents.
+House 7 got 80 presents.
+House 8 got 150 presents.
+House 9 got 130 presents.
+
+The first house gets 10 presents: it is visited only by Elf 1, which delivers 1 * 10 = 10 presents. The fourth house gets 70 presents, because it is visited by Elves 1, 2, and 4, for a total of 10 + 20 + 40 = 70 presents.
+
+What is the lowest house number of the house to get at least as many presents as the number in your puzzle input?
+
+Your puzzle input is 34000000.
+
+* https://oeis.org/A000203
+
+```{r, eval = FALSE}
+M <- 1e4
+N <- 1e6
+houses <- rep(0, N)
+
+for(elf in 1:M){
+  gifts <- rep(0, N)
+  gifts[seq(elf,N,elf)] <- 10*elf
+  houses <- houses + gifts
+}
+```
+
+```{r, eval = FALSE}
+divisors <- function(x){
+  #  Vector of numberes to test against
+  y <- seq_len(ceiling( x / 2 ))
+  #  Modulo division. If remainder is 0 that number is a divisor of x so return it
+  y[ x%%y == 0 ]
+}
+```
+
+```{r, eval = FALSE}
+N <- 1e6
+# houses <- rep(0,N)
+for(elf in 1:N){
+  # houses <- sum(10*divisors(elf))
+  if(sum(divisors(elf)) > 3.4e6){
+    print(paste("house number:", elf))
+    break
+  }
+}
+# summary(houses)
+```
+
+```{r}
+# https://math.stackexchange.com/questions/22721/is-there-a-formula-to-calculate-the-sum-of-all-proper-divisors-of-a-number
+A000203 <- function(n){
+  # Sequence A000203: sum of divisors
+  sum((1:n) * (( sign(n / (1:n) - floor(n/(1:n))) + 1) %% 2 ))
+}
+```
+
+```{r, eval = FALSE}
+N <- 1e6
+house_num <- 0
+max_presents <- 0
+
+for(elf in 1:N){
+  num_presents <- A000203(elf)
+  if(num_presents > max_presents){
+    house_num <- elf
+    max_presents <- num_presents
+    if(num_presents > 3.4e6){ break }
+  }
+}
+
+# house number 786240, with 34137600 presents
+```
+
+--- Part Two ---
+
+The Elves decide they don't want to visit an infinite number of houses. Instead, each Elf will stop after delivering presents to 50 houses. To make up for it, they decide to deliver presents equal to eleven times their number at each house.
+
+With these changes, what is the new lowest house number of the house to get at least as many presents as the number in your puzzle input?
+
+
+```{r, eval = TRUE}
+M <- 1e7
+N <- 1e7
+houses <- rep(0, N)
+
+for(elf in 1e5:M){
+  gifts <- rep(0, N)
+  gifts[seq(elf,N,50)] <- 11*elf
+  houses <- houses + gifts
+  
+  if(max(houses) > 3.4e7 / 11){
+    house_num <- which.max(houses)
+    max_presents <- houses[house_num]
+    print(paste("house number:", house_num))
+    print(paste("with", max_presents, "presents"))
+    break
+  }
+  
+}
+# "house number: 100100"is not the correct answer
+# "with 3301650 presents"
+```

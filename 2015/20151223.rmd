@@ -1,0 +1,161 @@
+---
+title: "Day 23"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+--- Day 23: Opening the Turing Lock ---
+
+Little Jane Marie just got her very first computer for Christmas from some unknown benefactor. It comes with instructions and an example program, but the computer itself seems to be malfunctioning. She's curious what the program does, and would like you to help her run it.
+
+The manual explains that the computer supports two registers and six instructions (truly, it goes on to remind the reader, a state-of-the-art technology). The registers are named a and b, can hold any non-negative integer, and begin with a value of 0. The instructions are as follows:
+
+    hlf r sets register r to half its current value, then continues with the next instruction.
+    tpl r sets register r to triple its current value, then continues with the next instruction.
+    inc r increments register r, adding 1 to it, then continues with the next instruction.
+    jmp offset is a jump; it continues with the instruction offset away relative to itself.
+    jie r, offset is like jmp, but only jumps if register r is even ("jump if even").
+    jio r, offset is like jmp, but only jumps if register r is 1 ("jump if one", not odd).
+
+All three jump instructions work with an offset relative to that instruction. The offset is always written with a prefix + or - to indicate the direction of the jump (forward or backward, respectively). For example, jmp +1 would simply continue with the next instruction, while jmp +0 would continuously jump back to itself forever.
+
+The program exits when it tries to run an instruction beyond the ones defined.
+
+For example, this program sets a to 2, because the jio instruction causes it to skip the tpl instruction:
+
+inc a
+jio a, +2
+tpl a
+inc a
+
+What is the value in register b when the program in your puzzle input is finished executing?
+
+```{r}
+# initialize registers
+a <- 0
+b <- 0
+
+# start processor
+instruction <- 1
+```
+
+
+```{r}
+while(instruction > 0 & instruction < 50){
+# jio a, +19
+  if((instruction == 1) & (a == 1)){ instruction <- instruction + 19}else{
+    instruction <- instruction + 1
+  }
+# inc a
+  if(instruction == 2){ a <- a + 1; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 3){ a <- 3*a; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 4){ a <- a + 1; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 5){ a <- 3*a; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 6){ a <- a + 1; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 7){ a <- 3*a; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 8){ a <- 3*a; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 9){ a <- a + 1; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 10){ a <- a + 1; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 11){ a <- 3*a; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 12){ a <- 3*a; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 13){ a <- a + 1; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 14){ a <- a + 1; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 15){ a <- 3*a; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 16){ a <- a + 1; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 17){ a <- a + 1; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 18){ a <- 3*a; instruction <- instruction + 1 }
+# jmp +23
+  if(instruction == 19){ instruction <- instruction + 23}
+# tpl a
+  if(instruction == 20){ a <- 3*a; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 21){ a <- 3*a; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 22){ a <- a + 1; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 23){ a <- a + 1; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 24){ a <- 3*a; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 25){ a <- a + 1; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 26){ a <- a + 1; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 27){ a <- 3*a; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 28){ a <- a + 1; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 29){ a <- 3*a; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 30){ a <- a + 1; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 31){ a <- 3*a; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 32){ a <- a + 1; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 33){ a <- 3*a; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 34){ a <- a + 1; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 35){ a <- a + 1; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 36){ a <- 3*a; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 37){ a <- a + 1; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 38){ a <- a + 1; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 39){ a <- 3*a; instruction <- instruction + 1 }
+# tpl a
+  if(instruction == 40){ a <- 3*a; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 41){ a <- a + 1; instruction <- instruction + 1 }
+# jio a, +8
+  if((instruction == 42) & (a == 1)){ instruction <- instruction + 8}else{
+    instruction <- instruction + 1
+  }
+# inc b
+  if(instruction == 43){ b <- b + 1; instruction <- instruction + 1 }
+# jie a, +4
+  if((instruction == 44) & (a %% 2 == 0)){ instruction <- instruction + 4}else{
+    instruction <- instruction + 1
+  }
+# tpl a
+  if(instruction == 45){ a <- 3*a; instruction <- instruction + 1 }
+# inc a
+  if(instruction == 46){ a <- a + 1; instruction <- instruction + 1 }
+# jmp +2
+  if(instruction == 47){ instruction <- instruction + 2}
+# hlf a
+  if(instruction == 48){ a <- a %/% 2; instruction <- instruction + 1 }
+# jmp -7
+  if(instruction == 49){ instruction <- instruction - 7}
+}
+```
+
+```{r}
+print(paste("answer:", b))
+# not zero
+```
+

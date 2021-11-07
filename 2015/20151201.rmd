@@ -62,3 +62,38 @@ for(step in santas_steps){
 print(santas_floor)
 ```
 
+--- Part Two ---
+
+Now, given the same instructions, find the position of the first character that causes him to enter the basement (floor -1). The first character in the instructions has position 1, the second character has position 2, and so on.
+
+For example:
+
+    ) causes him to enter the basement at character position 1.
+    ()()) causes him to enter the basement at character position 5.
+
+What is the position of the character that causes Santa to first enter the basement?
+
+```{r}
+santas_floor <- 0 #initialization
+position <- 1
+
+for(step in santas_steps){
+  if(step == "("){
+    santas_floor <- santas_floor + 1
+    position <- position + 1
+  }
+  if(step == ")"){
+    santas_floor <- santas_floor - 1
+    
+    
+    if(santas_floor < 0){
+      print(paste("basement at position:", position))
+      break
+    }
+    
+    position <- position + 1
+  }
+}
+# 1796 is too high
+# 1795 is the right answer!
+```

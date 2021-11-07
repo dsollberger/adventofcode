@@ -1,0 +1,138 @@
+---
+title: "Day 4"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# library("caesar")
+library("tidyverse")
+```
+
+--- Day 4: Security Through Obscurity ---
+
+Finally, you come across an information kiosk with a list of rooms. Of course, the list is encrypted and full of decoy data, but the instructions to decode the list are barely hidden nearby. Better remove the decoy data first.
+
+Each room consists of an encrypted name (lowercase letters separated by dashes) followed by a dash, a sector ID, and a checksum in square brackets.
+
+A room is real (not a decoy) if the checksum is the five most common letters in the encrypted name, in order, with ties broken by alphabetization. For example:
+
+    aaaaa-bbb-z-y-x-123[abxyz] is a real room because the most common letters are a (5), b (3), and then a tie between x, y, and z, which are listed alphabetically.
+    a-b-c-d-e-f-g-h-987[abcde] is a real room because although the letters are all tied (1 of each), the first five are listed alphabetically.
+    not-a-real-room-404[oarel] is a real room.
+    totally-real-room-200[decoy] is not.
+
+Of the real rooms from the list above, the sum of their sector IDs is 1514.
+
+What is the sum of the sector IDs of the real rooms?
+
+```{r, warning = FALSE}
+puzzle_input <- readLines("20161204input.txt")
+N <- length(puzzle_input)
+```
+
+```{r}
+encrypted_code <- rep(NA, N)
+sector_number <- rep(NA, N)
+checksum <- rep(NA,N)
+for(room in 1:N){
+  first_split <- str_split(puzzle_input[room], "\\[")[[1]]
+  encrypted_code[room] <- first_split[1]
+  sector_number[room] <- as.numeric(str_extract(first_split[1], "(\\d)+"))
+  checksum[room] <- str_sub(first_split[2], 1,5)
+}
+
+room_df <- data.frame(encrypted_code, sector_number, checksum)
+```
+
+```{r}
+check_room <- function(encrypted_code, checksum_real){
+  letter <- letters
+  analysis_df <- data.frame(letter)
+  analysis_df <- analysis_df %>%
+    mutate(letter_count = str_count(encrypted_code, letter)) %>%
+    arrange(desc(letter_count), letter)
+  checksum_claim <- paste(analysis_df$letter[1:5], collapse = "")
+  
+  #return
+  checksum_claim == checksum_real
+}
+
+check_room("aaaaa-bbb-z-y-x-123", "abxyz")
+check_room("a-b-c-d-e-f-g-h-987", "abcde")
+check_room("not-a-real-room-404", "oarel")
+check_room("totally-real-room-200", "decoy")
+```
+```{r}
+is_real <- rep(FALSE, N)
+for(i in 1:N){
+  is_real[i] <- check_room(encrypted_code[i], checksum[i])
+}
+
+room_df <- cbind(room_df, is_real)
+```
+
+```{r}
+real_room_df <- room_df %>% filter(is_real)
+sum(real_room_df$sector_number)
+# 173787 is the right answer
+```
+
+--- Part Two ---
+
+With all the decoy data out of the way, it's time to decrypt this list and get moving.
+
+The room names are encrypted by a state-of-the-art shift cipher, which is nearly unbreakable without the right software. However, the information kiosk designers at Easter Bunny HQ were not expecting to deal with a master cryptographer like yourself.
+
+To decrypt a room name, rotate each letter forward through the alphabet a number of times equal to the room's sector ID. A becomes B, B becomes C, Z becomes A, and so on. Dashes become spaces.
+
+For example, the real name for qzmt-zixmtkozy-ivhz-343 is very encrypted name.
+
+What is the sector ID of the room where North Pole objects are stored?
+
+```{r}
+shift_cipher <- function(this_letter, this_offset = 1){
+  current_number <- which.max(letters == this_letter)
+  next_number <- (current_number + this_offset) %% 26
+  
+  if(next_number == 0){
+    decrypted_letter <- "z"
+  }else{
+    decrypted_letter <- letters[next_number]
+  }
+  
+  # return
+  decrypted_letter
+}
+
+shift_cipher("d")
+shift_cipher("d", 2)
+shift_cipher("d", 21)
+shift_cipher("d", 22)
+shift_cipher("d", 23)
+shift_cipher("d", 26)
+```
+```{r}
+decrypt <- function(encrypted_code, sector_number = 1){
+  split_code <- str_split(encrypted_code, "")[[1]]
+  n <- length(split_code)
+  decrypted_code <- rep(" ", n)
+  
+  for(i in 1:n){
+    if(split_code[i] == "-"){
+      decrypted_code[i] <- " "
+    }else if(split_code[i] %in% letters){
+      decrypted_code[i] <- shift_cipher(split_code[i], sector_number)
+    }else{
+      decrypted_code[i] <- split_code[i]
+    }
+  }
+  # return
+  paste(decrypted_code, collapse = "")
+}
+
+decrypt("qzmt-zixmtkozy-ivhz-343", 343)
+```
+

@@ -1,0 +1,98 @@
+---
+title: "Day 3"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 3: Squares With Three Sides ---
+
+Now that you can think clearly, you move deeper into the labyrinth of hallways and office furniture that makes up this part of Easter Bunny HQ. This must be a graphic design department; the walls are covered in specifications for triangles.
+
+Or are they?
+
+The design document gives the side lengths of each triangle it describes, but... 5 10 25? Some of these aren't triangles. You can't help but mark the impossible ones.
+
+In a valid triangle, the sum of any two sides must be larger than the remaining side. For example, the "triangle" given above is impossible, because 5 + 10 is not larger than 25.
+
+In your puzzle input, how many of the listed triangles are possible?
+
+
+```{r}
+puzzle_input <- read.table("20161203input.txt", sep = "")
+```
+
+```{r}
+triangle_df <- puzzle_input
+colnames(triangle_df) <- c("A", "B", "C")
+triangle_df <- triangle_df %>%
+  rowwise() %>%
+  mutate(short  = min(c_across(A:C)),
+         middle = median(c_across(A:C)),
+         long   = max(c_across(A:C)))
+```
+
+```{r}
+triangle_df <- triangle_df %>%
+  mutate(possible = short + middle > long)
+```
+
+```{r}
+print(paste("There are", sum(triangle_df$possible), "possible triangles"))
+```
+
+--- Part Two ---
+
+Now that you've helpfully marked up their design documents, it occurs to you that triangles are specified in groups of three vertically. Each set of three numbers in a column specifies a triangle. Rows are unrelated.
+
+For example, given the following specification, numbers with the same hundreds digit would be part of the same triangle:
+
+101 301 501
+102 302 502
+103 303 503
+201 401 601
+202 402 602
+203 403 603
+
+In your puzzle input, and instead reading by columns, how many of the listed triangles are possible?
+
+```{r}
+triangle_check <- function(A,B,C){
+  short = min(c(A,B,C))
+  middle = median(c(A,B,C))
+  long = max(c(A,B,C))
+  short + middle > long
+}
+```
+
+```{r}
+count_triangles <- function(this_vector){
+  n <- length(this_vector)
+  possible_triangles <- 0
+  
+  for(i in seq(1, n, 3)){
+    # print(paste(this_vector[i], this_vector[i+1], this_vector[i+2]))
+    if(triangle_check(
+      this_vector[i], this_vector[i+1], this_vector[i+2]
+    )){
+      possible_triangles <- possible_triangles + 1
+    }
+  }
+  #return
+  possible_triangles
+}
+```
+
+```{r}
+count_triangles(puzzle_input[,1]) +
+  count_triangles(puzzle_input[,2]) +
+  count_triangles(puzzle_input[,3])
+# 1223 is too low
+# 1224 is too low
+```
+

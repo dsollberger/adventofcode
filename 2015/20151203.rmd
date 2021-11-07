@@ -124,3 +124,66 @@ run_journey("^v^v^v^v^v")
 run_journey(santas_route)
 ```
 
+--- Part Two ---
+
+The next year, to speed up the process, Santa creates a robot version of himself, Robo-Santa, to deliver presents with him.
+
+Santa and Robo-Santa start at the same location (delivering two presents to the same starting house), then take turns moving based on instructions from the elf, who is eggnoggedly reading from the same script as the previous year.
+
+This year, how many houses receive at least one present?
+
+For example:
+
+    ^v delivers presents to 3 houses, because Santa goes north, and then Robo-Santa goes south.
+    ^>v< now delivers presents to 3 houses, and Santa and Robo-Santa end up back where they started.
+    ^v^v^v^v^v now delivers presents to 11 houses, with Santa going one direction and Robo-Santa going the other.
+
+```{r, eval = TRUE}
+# Santa's journey
+run_journey2 <- function(santas_route){
+  
+  santas_steps <- stringr::str_split(santas_route, "")[[1]]
+  
+  # starting house
+  santa_x <- 0
+  santa_y <- 0
+  robot_x <- 0
+  robot_y <- 0
+
+  this_location <- paste0("x: ", 0, " ", "y: ", 0)
+  visited_locations <- this_location
+  
+  for(step in 1:length(santas_steps)){
+    if(step %% 2 == 1){
+      if(santas_steps[step] == "^"){ santa_y <- santa_y + 1 }
+      if(santas_steps[step] == ">"){ santa_x <- santa_x + 1 }
+      if(santas_steps[step] == "v"){ santa_y <- santa_y - 1 }
+      if(santas_steps[step] == "<"){ santa_x <- santa_x - 1 }
+      this_location <- paste0("x: ", santa_x, " ", "y: ", santa_y)
+    }
+    if(step %% 2 == 0){
+      if(santas_steps[step] == "^"){ robot_y <- robot_y + 1 }
+      if(santas_steps[step] == ">"){ robot_x <- robot_x + 1 }
+      if(santas_steps[step] == "v"){ robot_y <- robot_y - 1 }
+      if(santas_steps[step] == "<"){ robot_x <- robot_x - 1 }
+      this_location <- paste0("x: ", robot_x, " ", "y: ", robot_y)
+    }
+    
+    if(!(this_location %in% visited_locations)){
+      visited_locations <- c(visited_locations, this_location)
+    }
+  }
+  
+  #return
+  # gift_df
+  print(paste0("They visited ", length(visited_locations), " houses."))
+}
+```
+
+```{r}
+# tests
+run_journey2("^v")
+run_journey2("^>v<")
+run_journey2("^v^v^v^v^v")
+run_journey2(santas_route)
+```

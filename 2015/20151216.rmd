@@ -1,0 +1,159 @@
+---
+title: "Day 16"
+author: "Derek Sollberger"
+date: "11/6/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 16: Aunt Sue ---
+
+Your Aunt Sue has given you a wonderful gift, and you'd like to send her a thank you card. However, there's a small problem: she signed it "From, Aunt Sue".
+
+You have 500 Aunts named "Sue".
+
+So, to avoid sending the card to the wrong person, you need to figure out which Aunt Sue (which you conveniently number 1 to 500, for sanity) gave you the gift. You open the present and, as luck would have it, good ol' Aunt Sue got you a My First Crime Scene Analysis Machine! Just what you wanted. Or needed, as the case may be.
+
+The My First Crime Scene Analysis Machine (MFCSAM for short) can detect a few specific compounds in a given sample, as well as how many distinct kinds of those compounds there are. According to the instructions, these are what the MFCSAM can detect:
+
+    children, by human DNA age analysis.
+    cats. It doesn't differentiate individual breeds.
+    Several seemingly random breeds of dog: samoyeds, pomeranians, akitas, and vizslas.
+    goldfish. No other kinds of fish.
+    trees, all in one group.
+    cars, presumably by exhaust or gasoline or something.
+    perfumes, which is handy, since many of your Aunts Sue wear a few kinds.
+
+In fact, many of your Aunts Sue have many of these. You put the wrapping from the gift into the MFCSAM. It beeps inquisitively at you a few times and then prints out a message on ticker tape:
+
+children: 3
+cats: 7
+samoyeds: 2
+pomeranians: 3
+akitas: 0
+vizslas: 0
+goldfish: 5
+trees: 3
+cars: 2
+perfumes: 1
+
+You make a list of the things you can remember about each Aunt Sue. Things missing from your list aren't zero - you simply don't remember the value.
+
+What is the number of the Sue that got you the gift?
+
+```{r}
+# load data
+all_sues <- readLines("20151216input.txt")
+```
+```{r}
+children_check <- str_detect(all_sues, "children: 3")
+cats_check <- str_detect(all_sues, "cats: 7")
+samoyeds_check <- str_detect(all_sues, "samoyeds: 2")
+pomeranians_check <- str_detect(all_sues, "pomeranians: 3")
+akitas_check <- str_detect(all_sues, "akitas: 0")
+vizslas_check <- str_detect(all_sues, "vizslas: 0")
+goldfish_check <- str_detect(all_sues, "goldfish: 5")
+trees_check <- str_detect(all_sues, "trees: 3")
+cars_check <- str_detect(all_sues, "cars: 2")
+perfumes_check <- str_detect(all_sues, "perfumes: 1")
+```
+
+```{r}
+clues_df <- data.frame(children_check, cats_check, samoyeds_check,
+                       pomeranians_check, akitas_check, vizslas_check,
+                       goldfish_check, trees_check, cars_check,
+                       perfumes_check)
+clues_sum <- rowSums(clues_df)
+```
+
+```{r}
+# only one "Sue" had 3 matching clues
+print(which(clues_sum == max(clues_sum)))
+```
+
+--- Part Two ---
+
+As you're about to send the thank you note, something in the MFCSAM's instructions catches your eye. Apparently, it has an outdated retroencabulator, and so the output from the machine isn't exact values - some of them indicate ranges.
+
+In particular, the cats and trees readings indicates that there are greater than that many (due to the unpredictable nuclear decay of cat dander and tree pollen), while the pomeranians and goldfish readings indicate that there are fewer than that many (due to the modial interaction of magnetoreluctance).
+
+What is the number of the real Aunt Sue?
+
+```{r}
+N <- length(all_sues)
+
+cats_check <- rep(FALSE, N)
+for(i in 1:N){
+  if(str_detect(all_sues[i], "cats")){
+    this_sue <- str_split(all_sues[i], " ")[[1]]
+    num_cats <- as.numeric(
+      str_extract(
+        this_sue[which(str_detect(this_sue, "cats")) + 1], "(\\d)+"))
+    if(num_cats > 7){
+      cats_check[i] <- TRUE
+    }
+  }
+}
+```
+
+```{r}
+trees_check <- rep(FALSE, N)
+for(i in 1:N){
+  if(str_detect(all_sues[i], "trees")){
+    this_sue <- str_split(all_sues[i], " ")[[1]]
+    num_trees <- as.numeric(
+      str_extract(
+        this_sue[which(str_detect(this_sue, "trees")) + 1], "(\\d)+"))
+    if(num_trees > 3){
+      trees_check[i] <- TRUE
+    }
+  }
+}
+```
+
+```{r}
+pomeranians_check <- rep(FALSE, N)
+for(i in 1:N){
+  if(str_detect(all_sues[i], "pomeranians")){
+    this_sue <- str_split(all_sues[i], " ")[[1]]
+    num_pomeranians <- as.numeric(
+      str_extract(
+        this_sue[which(str_detect(this_sue, "pomeranians")) + 1], "(\\d)+"))
+    if(num_pomeranians < 3){
+      pomeranians_check[i] <- TRUE
+    }
+  }
+}
+```
+
+```{r}
+goldfish_check <- rep(FALSE, N)
+for(i in 1:N){
+  if(str_detect(all_sues[i], "goldfish")){
+    this_sue <- str_split(all_sues[i], " ")[[1]]
+    num_goldfish <- as.numeric(
+      str_extract(
+        this_sue[which(str_detect(this_sue, "goldfish")) + 1], "(\\d)+"))
+    if(num_goldfish < 5){
+      goldfish_check[i] <- TRUE
+    }
+  }
+}
+```
+
+```{r}
+clues_df <- data.frame(children_check, cats_check, samoyeds_check,
+                       pomeranians_check, akitas_check, vizslas_check,
+                       goldfish_check, trees_check, cars_check,
+                       perfumes_check)
+clues_sum <- rowSums(clues_df)
+```
+
+```{r}
+# only one "Sue" had 3 matching clues
+print(which(clues_sum == max(clues_sum)))
+```
