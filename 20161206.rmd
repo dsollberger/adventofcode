@@ -1,0 +1,121 @@
+---
+title: "Day 6"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 6: Signals and Noise ---
+
+Something is jamming your communications with Santa. Fortunately, your signal is only partially jammed, and protocol in situations like this is to switch to a simple repetition code to get the message through.
+
+In this model, the same message is sent repeatedly. You've recorded the repeating message signal (your puzzle input), but the data seems quite corrupted - almost too badly to recover. Almost.
+
+All you need to do is figure out which character is most frequent for each position. For example, suppose you had recorded the following messages:
+
+eedadn
+drvtee
+eandsr
+raavrd
+atevrs
+tsrnev
+sdttsa
+rasrtv
+nssdts
+ntnada
+svetve
+tesnvt
+vntsnd
+vrdear
+dvrsen
+enarar
+
+The most common character in the first column is e; in the second, a; in the third, s, and so on. Combining these characters returns the error-corrected message, easter.
+
+Given the recording in your puzzle input, what is the error-corrected version of the message being sent?
+
+```{r, warning = FALSE}
+puzzle_input <- readLines("20161206input.txt")
+```
+
+```{r}
+N <- length(puzzle_input)
+letter1 <- rep(NA, N)
+letter2 <- rep(NA, N)
+letter3 <- rep(NA, N)
+letter4 <- rep(NA, N)
+letter5 <- rep(NA, N)
+letter6 <- rep(NA, N)
+letter7 <- rep(NA, N)
+letter8 <- rep(NA, N)
+
+for(i in 1:N){
+  this_string_split <- str_split(puzzle_input[i], "")[[1]]
+  
+  letter1[i] <- this_string_split[1]
+  letter2[i] <- this_string_split[2]
+  letter3[i] <- this_string_split[3]
+  letter4[i] <- this_string_split[4]
+  letter5[i] <- this_string_split[5]
+  letter6[i] <- this_string_split[6]
+  letter7[i] <- this_string_split[7]
+  letter8[i] <- this_string_split[8]
+}
+
+letter_df <- data.frame(letter1, letter2, letter3, letter4,
+                        letter5, letter6, letter7, letter8)
+```
+
+```{r}
+password_letter1 <- names(sort(table(letter_df$letter1), decreasing = TRUE)[1])
+password_letter2 <- names(sort(table(letter_df$letter2), decreasing = TRUE)[1])
+password_letter3 <- names(sort(table(letter_df$letter3), decreasing = TRUE)[1])
+password_letter4 <- names(sort(table(letter_df$letter4), decreasing = TRUE)[1])
+password_letter5 <- names(sort(table(letter_df$letter5), decreasing = TRUE)[1])
+password_letter6 <- names(sort(table(letter_df$letter6), decreasing = TRUE)[1])
+password_letter7 <- names(sort(table(letter_df$letter7), decreasing = TRUE)[1])
+password_letter8 <- names(sort(table(letter_df$letter8), decreasing = TRUE)[1])
+```
+
+```{r}
+password <- paste0(password_letter1, password_letter2, 
+                   password_letter3, password_letter4,
+                   password_letter5, password_letter6,
+                   password_letter7, password_letter8, collapse = "")
+print(paste("The password is", password))
+```
+
+--- Part Two ---
+
+Of course, that would be the message - if you hadn't agreed to use a modified repetition code instead.
+
+In this modified code, the sender instead transmits what looks like random data, but for each character, the character they actually want to send is slightly less likely than the others. Even after signal-jamming noise, you can look at the letter distributions in each column and choose the least common letter to reconstruct the original message.
+
+In the above example, the least common character in the first column is a; in the second, d, and so on. Repeating this process for the remaining characters produces the original message, advent.
+
+Given the recording in your puzzle input and this new decoding methodology, what is the original message that Santa is trying to send?
+
+```{r}
+password_letter1 <- names(sort(table(letter_df$letter1), decreasing = TRUE)[26])
+password_letter2 <- names(sort(table(letter_df$letter2), decreasing = TRUE)[26])
+password_letter3 <- names(sort(table(letter_df$letter3), decreasing = TRUE)[26])
+password_letter4 <- names(sort(table(letter_df$letter4), decreasing = TRUE)[26])
+password_letter5 <- names(sort(table(letter_df$letter5), decreasing = TRUE)[26])
+password_letter6 <- names(sort(table(letter_df$letter6), decreasing = TRUE)[26])
+password_letter7 <- names(sort(table(letter_df$letter7), decreasing = TRUE)[26])
+password_letter8 <- names(sort(table(letter_df$letter8), decreasing = TRUE)[26])
+```
+
+```{r}
+password <- paste0(password_letter1, password_letter2, 
+                   password_letter3, password_letter4,
+                   password_letter5, password_letter6,
+                   password_letter7, password_letter8, collapse = "")
+print(paste("The password is", password))
+# gggggghh is not the answer
+```

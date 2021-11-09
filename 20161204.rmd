@@ -135,4 +135,18 @@ decrypt <- function(encrypted_code, sector_number = 1){
 
 decrypt("qzmt-zixmtkozy-ivhz-343", 343)
 ```
+```{r}
+decrypted_code <- rep("1337", N)
+for(i in 1:N){
+  decrypted_code[i] <- decrypt(encrypted_code[i], sector_number[i])
+}
+
+room_df <- cbind(decrypted_code, room_df)
+```
+
+```{r}
+check_these_rooms <- room_df %>%
+  filter(is_real) %>%
+  arrange(decrypted_code)
+```
 

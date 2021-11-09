@@ -1,0 +1,327 @@
+---
+title: "Day 7"
+author: "Derek Sollberger"
+date: "11/7/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 7: Internet Protocol Version 7 ---
+
+While snooping around the local network of EBHQ, you compile a list of IP addresses (they're IPv7, of course; IPv6 is much too limited). You'd like to figure out which IPs support TLS (transport-layer snooping).
+
+An IP supports TLS if it has an Autonomous Bridge Bypass Annotation, or ABBA. An ABBA is any four-character sequence which consists of a pair of two different characters followed by the reverse of that pair, such as xyyx or abba. However, the IP also must not have an ABBA within any hypernet sequences, which are contained by square brackets.
+
+For example:
+
+    abba[mnop]qrst supports TLS (abba outside square brackets).
+    abcd[bddb]xyyx does not support TLS (bddb is within square brackets, even though xyyx is outside square brackets).
+    aaaa[qwer]tyui does not support TLS (aaaa is invalid; the interior characters must be different).
+    ioxxoj[asdfgh]zxcvbn supports TLS (oxxo is outside square brackets, even though it's within a larger string).
+
+How many IPs in your puzzle input support TLS?
+
+```{r}
+puzzle_input <- readLines("20161207input.txt")
+```
+
+```{r}
+ABBA_check <- function(this_string){
+  this_string_split <- str_split(this_string, "")[[1]]
+  n <- length(this_string_split)
+  pass_check <- FALSE
+  for(i in 1:(n-3)){
+    if(this_string_split[i] != this_string_split[i+1]){
+      if(this_string_split[i] == this_string_split[i + 3]){
+        if(this_string_split[i+1]== this_string_split[i+2]){
+          pass_check <- TRUE
+        }
+      }
+    }
+  }
+  pass_check # return
+}
+
+ABBA_check("abba")
+ABBA_check("aaaa")
+ABBA_check("ioxxoj")
+ABBA_check("zxcvbn")
+```
+```{r}
+TLS_check <- function(list_of_strings){
+  # (ABBA_check(A) | ABBA_check(C)) & !ABBA_check(B)
+  pass_check <- FALSE
+  n <- length(list_of_strings)
+  
+  for(j in 1:n){
+    if(j %% 2 == 1){
+      if(ABBA_check(list_of_strings[j])){
+        pass_check <- TRUE
+      }
+    }
+    if(j %% 2 == 0){
+      if(ABBA_check(list_of_strings[j])){
+        pass_check <- FALSE
+        break
+      }
+    }
+  }
+  pass_check # return
+}
+
+TLS_check(c("abba", "mnop", "qrst"))
+TLS_check(c("abcd", "bddb", "xyyx"))
+TLS_check(c("aaaa", "qwer", "tuyi"))
+TLS_check(c("ioxxoj", "asdfgh", "zxcvbn"))
+```
+```{r, eval = FALSE}
+N <- length(puzzle_input)
+IPpiece1 <- rep(NA, N)
+IPpiece2 <- rep(NA, N)
+hypernat <- rep(NA, N)
+TLS_supp <- rep(NA, N)
+
+
+for(i in 1:N){
+  ss <- str_split(puzzle_input[i], "\\[")[[1]]
+  ss2 <- str_split(ss[2], "\\]")[[1]]
+  
+  IPpiece1[i] <- ss[1]
+  hypernat[i] <- str_sub(ss2[1], start = 1, end = -2)
+  IPpiece2[i] <- ss2[2]
+}
+
+TLS_df <- data.frame(IPpiece1, hypernat, IPpiece2, TLS_supp)
+```
+
+Alas, some IP addresses had more than one hypernat
+
+```{r}
+N <- length(puzzle_input)
+TLS_supported <- 0
+
+for(i in 1:N){
+  ss <- str_split(puzzle_input[i], "\\[|\\]")[[1]]
+  if(TLS_check(ss)){
+    TLS_supported <- TLS_supported + 1
+  }
+}
+```
+
+
+--- Part Two ---
+
+You would also like to know which IPs support SSL (super-secret listening).
+
+An IP supports SSL if it has an Area-Broadcast Accessor, or ABA, anywhere in the supernet sequences (outside any square bracketed sections), and a corresponding Byte Allocation Block, or BAB, anywhere in the hypernet sequences. An ABA is any three-character sequence which consists of the same character twice with a different character between them, such as xyx or aba. A corresponding BAB is the same characters but in reversed positions: yxy and bab, respectively.
+
+For example:
+
+    aba[bab]xyz supports SSL (aba outside square brackets with corresponding bab within square brackets).
+    xyx[xyx]xyx does not support SSL (xyx, but no corresponding yxy).
+    aaa[kek]eke supports SSL (eke in supernet with corresponding kek in hypernet; the aaa sequence is not related, because the interior character must be different).
+    zazbz[bzb]cdb supports SSL (zaz has no corresponding aza, but zbz has a corresponding bzb, even though zaz and zbz overlap).
+
+How many IPs in your puzzle input support SSL?
+
+```{r}
+SSL_check <- function(IP_address){
+  pass_check <- FALSE
+  ss <- str_split(IP_address, "\\[|\\]")[[1]]
+  N <- length(ss) #3, 5, or 7
+  supernet1 <- ss[1]
+  hypernat1 <- ss[2]
+  supernet2 <- ss[3]
+  hypernat2 <- ""
+  supernet3 <- ""
+  hypernat3 <- ""
+  supernet4 <- ""
+  if(N == 5){
+    hypernat2 <- ss[4]
+    supernet3 <- ss[5]
+  }
+  if(N == 7){
+    hypernat2 <- ss[4]
+    supernet3 <- ss[5]
+    hypernat3 <- ss[6]
+    supernet4 <- ss[7]
+  }
+  
+  if(N == 3){
+    supernet1_split <- str_split(supernet1, "")[[1]]
+    n <- length(supernet1_split)
+    for(j in 1:(n-2)){
+      if(supernet1_split[j] != supernet1_split[j+1]){
+        if(supernet1_split[j] == supernet1_split[j+2]){
+          this_query <- paste0(supernet1_split[j+1], supernet1_split[j],
+                               supernet1_split[j+1], collapse = "")
+          if(str_detect(hypernat1, this_query)){
+            pass_check <- TRUE
+            break
+          }
+        }
+      }
+    }
+    
+    supernet2_split <- str_split(supernet2, "")[[1]]
+    n <- length(supernet2_split)
+    for(j in 1:(n-2)){
+      if(supernet2_split[j] != supernet2_split[j+1]){
+        if(supernet2_split[j] == supernet2_split[j+2]){
+          this_query <- paste0(supernet2_split[j+1], supernet2_split[j],
+                               supernet2_split[j+1], collapse = "")
+          if(str_detect(hypernat1, this_query)){
+            pass_check <- TRUE
+            break
+          }
+        }
+      }
+    }
+  }
+  
+  if(N == 5){
+    supernet1_split <- str_split(supernet1, "")[[1]]
+    n <- length(supernet1_split)
+    for(j in 1:(n-2)){
+      if(supernet1_split[j] != supernet1_split[j+1]){
+        if(supernet1_split[j] == supernet1_split[j+2]){
+          this_query <- paste0(supernet1_split[j+1], supernet1_split[j],
+                               supernet1_split[j+1], collapse = "")
+          if(str_detect(hypernat1, this_query)|
+             str_detect(hypernat2, this_query)){
+            pass_check <- TRUE
+            break
+          }
+        }
+      }
+    }
+    
+    supernet2_split <- str_split(supernet2, "")[[1]]
+    n <- length(supernet2_split)
+    for(j in 1:(n-2)){
+      if(supernet2_split[j] != supernet2_split[j+1]){
+        if(supernet2_split[j] == supernet2_split[j+2]){
+          this_query <- paste0(supernet2_split[j+1], supernet2_split[j],
+                               supernet2_split[j+1], collapse = "")
+          if(str_detect(hypernat1, this_query)|
+             str_detect(hypernat2, this_query)){
+            pass_check <- TRUE
+            break
+          }
+        }
+      }
+    }
+    
+    supernet3_split <- str_split(supernet3, "")[[1]]
+    n <- length(supernet3_split)
+    for(j in 1:(n-2)){
+      if(supernet3_split[j] != supernet3_split[j+1]){
+        if(supernet3_split[j] == supernet3_split[j+2]){
+          this_query <- paste0(supernet3_split[j+1], supernet3_split[j],
+                               supernet3_split[j+1], collapse = "")
+          if(str_detect(hypernat1, this_query)|
+             str_detect(hypernat2, this_query)){
+            pass_check <- TRUE
+            break
+          }
+        }
+      }
+    }
+  }
+  
+  if(N == 7){
+    supernet1_split <- str_split(supernet1, "")[[1]]
+    n <- length(supernet1_split)
+    for(j in 1:(n-2)){
+      if(supernet1_split[j] != supernet1_split[j+1]){
+        if(supernet1_split[j] == supernet1_split[j+2]){
+          this_query <- paste0(supernet1_split[j+1], supernet1_split[j],
+                               supernet1_split[j+1], collapse = "")
+          if(str_detect(hypernat1, this_query)|
+             str_detect(hypernat2, this_query)|
+             str_detect(hypernat3, this_query)){
+            pass_check <- TRUE
+            break
+          }
+        }
+      }
+    }
+    
+    supernet2_split <- str_split(supernet2, "")[[1]]
+    n <- length(supernet2_split)
+    for(j in 1:(n-2)){
+      if(supernet2_split[j] != supernet2_split[j+1]){
+        if(supernet2_split[j] == supernet2_split[j+2]){
+          this_query <- paste0(supernet2_split[j+1], supernet2_split[j],
+                               supernet2_split[j+1], collapse = "")
+          if(str_detect(hypernat1, this_query)|
+             str_detect(hypernat2, this_query)|
+             str_detect(hypernat3, this_query)){
+            pass_check <- TRUE
+            break
+          }
+        }
+      }
+    }
+    
+    supernet3_split <- str_split(supernet3, "")[[1]]
+    n <- length(supernet3_split)
+    for(j in 1:(n-2)){
+      if(supernet3_split[j] != supernet3_split[j+1]){
+        if(supernet3_split[j] == supernet3_split[j+2]){
+          this_query <- paste0(supernet3_split[j+1], supernet3_split[j],
+                               supernet3_split[j+1], collapse = "")
+          if(str_detect(hypernat1, this_query)|
+             str_detect(hypernat2, this_query)|
+             str_detect(hypernat3, this_query)){
+            pass_check <- TRUE
+            break
+          }
+        }
+      }
+    }
+    
+    supernet4_split <- str_split(supernet4, "")[[1]]
+    n <- length(supernet4_split)
+    for(j in 1:(n-2)){
+      if(supernet4_split[j] != supernet4_split[j+1]){
+        if(supernet4_split[j] == supernet4_split[j+2]){
+          this_query <- paste0(supernet4_split[j+1], supernet4_split[j],
+                               supernet4_split[j+1], collapse = "")
+          if(str_detect(hypernat1, this_query)|
+             str_detect(hypernat2, this_query)|
+             str_detect(hypernat3, this_query)){
+            pass_check <- TRUE
+            break
+          }
+        }
+      }
+    }
+  }
+  
+  pass_check #return
+}
+
+SSL_check("aba[bab]xyz") #TRUE
+SSL_check("xyx[xyx]xyx") #FALSE
+SSL_check("aaa[kek]eke") #TRUE
+SSL_check("zazbz[bzb]cdb") #TRUE
+SSL_check("qwe[rty]xyx[xyx]xyx") #FALSE
+SSL_check("qwe[rty]aaa[kek]eke") #TRUE
+```
+
+
+```{r}
+N <- length(puzzle_input)
+SSL_supported <- 0
+
+for(i in 1:N){
+  if(SSL_check(puzzle_input[i])){
+    SSL_supported <- SSL_supported + 1
+  }
+}
+```

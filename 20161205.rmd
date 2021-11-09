@@ -1,0 +1,143 @@
+---
+title: "Day 5"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+--- Day 5: How About a Nice Game of Chess? ---
+
+You are faced with a security door designed by Easter Bunny engineers that seem to have acquired most of their security knowledge by watching hacking movies.
+
+The eight-character password for the door is generated one character at a time by finding the MD5 hash of some Door ID (your puzzle input) and an increasing integer index (starting with 0).
+
+A hash indicates the next character in the password if its hexadecimal representation starts with five zeroes. If it does, the sixth character in the hash is the next character of the password.
+
+For example, if the Door ID is abc:
+
+    The first index which produces a hash that starts with five zeroes is 3231929, which we find by hashing abc3231929; the sixth character of the hash, and thus the first character of the password, is 1.
+    5017308 produces the next interesting hash, which starts with 000008f82..., so the second character of the password is 8.
+    The third time a hash starts with five zeroes is for abc5278568, discovering the character f.
+
+In this example, after continuing this search a total of eight times, the password is 18f47a30.
+
+Given the actual Door ID, what is the password?
+
+```{r}
+puzzle_input <- "abbhdwsy"
+num_stem <- rep(NA,8)
+password <- rep(NA,8)
+puzzle_df <- data.frame(puzzle_input, num_stem, password)
+```
+
+```{r}
+# helper function
+hash_first_5 <- function(secret_key = "abcdef", number = 609043){
+  combined_key <- paste0(secret_key, number)
+  md5_hash <- openssl::md5(combined_key)
+  
+  # return first 5 characters
+  stringr::str_sub(md5_hash, 1, 5)
+}
+
+hash_first_5("abc", "3231928")
+hash_first_5("abc", "3231929")
+hash_first_5("abc", "5017307")
+hash_first_5("abc", "5017308")
+hash_first_5("abc", "5278567")
+hash_first_5("abc", "5278568")
+```
+```{r}
+# helper function
+hash6 <- function(secret_key = "abcdef", number = 609043){
+  combined_key <- paste0(secret_key, number)
+  md5_hash <- openssl::md5(combined_key)
+  
+  # return sixth character
+  stringr::str_sub(md5_hash, 6, 6)
+}
+
+hash6("abc", "3231929")
+hash6("abc", "5017308")
+hash6("abc", "5278568")
+```
+```{r, eval = FALSE}
+num_found <- 0
+start_time <- proc.time()
+# puzzle_input <- "abc"
+for(iter in 1:1e7){
+  if(codes_to_hash(puzzle_input, iter) == "00000"){ 
+    num_found <- num_found + 1
+    puzzle_df[num_found, "num_stem"] <- iter
+    puzzle_df[num_found, "password"] <- hash6(puzzle_input, iter)
+  }
+  if(num_found >= 8){
+    break
+  }
+}
+end_time <- proc.time()
+print(end_time - start_time)
+```
+```{r}
+print(paste0(puzzle_df$password, collapse = ""))
+```
+
+--- Part Two ---
+
+As the door slides open, you are presented with a second door that uses a slightly more inspired security mechanism. Clearly unimpressed by the last version (in what movie is the password decrypted in order?!), the Easter Bunny engineers have worked out a better solution.
+
+Instead of simply filling in the password from left to right, the hash now also indicates the position within the password to fill. You still look for hashes that begin with five zeroes; however, now, the sixth character represents the position (0-7), and the seventh character is the character to put in that position.
+
+A hash result of 000001f means that f is the second character in the password. Use only the first result for each position, and ignore invalid positions.
+
+For example, if the Door ID is abc:
+
+    The first interesting hash is from abc3231929, which produces 0000015...; so, 5 goes in position 1: _5______.
+    In the previous method, 5017308 produced an interesting hash; however, it is ignored, because it specifies an invalid position (8).
+    The second interesting hash is at index 5357525, which produces 000004e...; so, e goes in position 4: _5__e___.
+
+You almost choke on your popcorn as the final character falls into place, producing the password 05ace8e3.
+
+Given the actual Door ID and this new method, what is the password? Be extra proud of your solution if it uses a cinematic "decrypting" animation.
+
+```{r}
+# helper function
+hash7 <- function(secret_key = "abcdef", number = 609043){
+  combined_key <- paste0(secret_key, number)
+  md5_hash <- openssl::md5(combined_key)
+  
+  # return sixth character
+  stringr::str_sub(md5_hash, 7, 7)
+}
+
+hash7("abc", "3231929")
+hash7("abc", "5017308")
+hash7("abc", "5278568")
+```
+
+```{r, eval = FALSE}
+# num_found <- 0
+start_time <- proc.time()
+puzzle_input <- "abbhdwsy"
+# puzzle_input <- "abc"
+num_stem <- NA
+location <- NA
+password <- NA
+puzzle_df <- data.frame(puzzle_input, num_stem, location, password)
+
+for(iter in 1:1e8){
+  if(codes_to_hash(puzzle_input, iter) == "00000"){ 
+    # num_found <- num_found + 1
+    num_stem <- iter
+    location <- hash6(puzzle_input, iter)
+    password <- hash7(puzzle_input, iter)
+    this_row <- data.frame(puzzle_input, num_stem, location, password)
+    puzzle_df <- rbind(puzzle_df, this_row)
+  }
+  # if(num_found >= 8){
+  #   break
+  # }
+}
+end_time <- proc.time()
+print(end_time - start_time)
+```
