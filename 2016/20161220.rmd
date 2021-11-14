@@ -1,0 +1,83 @@
+---
+title: "Day 20"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 20: Firewall Rules ---
+
+You'd like to set up a small hidden computer here so you can use it to get back into the network later. However, the corporate firewall only allows communication with certain external IP addresses.
+
+You've retrieved the list of blocked IPs from the firewall, but the list seems to be messy and poorly maintained, and it's not clear which IPs are allowed. Also, rather than being written in dot-decimal notation, they are written as plain 32-bit integers, which can have any value from 0 through 4294967295, inclusive.
+
+For example, suppose only the values 0 through 9 were valid, and that you retrieved the following blacklist:
+
+5-8
+0-2
+4-7
+
+The blacklist specifies ranges of IPs (inclusive of both the start and end value) that are not allowed. Then, the only IPs that this firewall allows are 3 and 9, since those are the only numbers not in any range.
+
+Given the list of blocked IPs you retrieved from the firewall (your puzzle input), what is the lowest-valued IP that is not blocked?
+
+```{r}
+puzzle_input <- readLines("20161220input.txt")
+```
+
+```{r}
+df <- data.frame(puzzle_input)
+colnames(df) <- "ranges"
+df <- df %>%
+  separate(ranges, into = c("start", "end"), sep = "-", remove = FALSE) 
+
+df$start <- as.numeric(df$start)
+df$end   <- as.numeric(df$end)
+
+df <- df %>%
+  arrange(start)
+
+# visually looked at columns, but 1730563 was not the correct answer
+```
+
+```{r}
+N <- nrow(df)
+lowest_IP <- 1e11
+
+for(i in 2:N){
+  previous_ends <- df$end[1:i-1]
+  this_start <- df$start[i]
+  
+  if(this_start > (max(previous_ends) + 1)){
+    lowest_IP <- max(previous_ends) + 1
+    break
+  }
+}
+print(paste("The lowest IP address is", lowest_IP))
+# 4793564 was the correct answer
+```
+
+--- Part Two ---
+
+How many IPs are allowed by the blacklist?
+
+```{r}
+N <- nrow(df)
+valid_IPs <- 0
+
+for(i in 2:N){
+  previous_ends <- df$end[1:i-1]
+  this_start <- df$start[i]
+  
+  if(this_start > (max(previous_ends) + 1)){
+    valid_IPs <- valid_IPs + ((this_start - max(previous_ends)) - 1)
+  }
+}
+print(paste("The number of valid IP addresses is", valid_IPs))
+# 146 was the correct answer!
+```

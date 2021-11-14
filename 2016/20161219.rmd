@@ -1,0 +1,195 @@
+---
+title: "Day 19"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 19: An Elephant Named Joseph ---
+
+The Elves contact you over a highly secure emergency channel. Back at the North Pole, the Elves are busy misunderstanding White Elephant parties.
+
+Each Elf brings a present. They all sit in a circle, numbered starting with position 1. Then, starting with the first Elf, they take turns stealing all the presents from the Elf to their left. An Elf with no presents is removed from the circle and does not take turns.
+
+For example, with five Elves (numbered 1 to 5):
+
+  1
+5   2
+ 4 3
+
+    Elf 1 takes Elf 2's present.
+    Elf 2 has no presents and is skipped.
+    Elf 3 takes Elf 4's present.
+    Elf 4 has no presents and is also skipped.
+    Elf 5 takes Elf 1's two presents.
+    Neither Elf 1 nor Elf 2 have any presents, so both are skipped.
+    Elf 3 takes Elf 5's three presents.
+
+So, with five Elves, the Elf that sits starting in position 3 gets all the presents.
+
+With the number of Elves given in your puzzle input, which Elf gets all the presents?
+
+```{r}
+puzzle_input <- 3014603
+```
+
+```{r}
+dumb_elephant <- function(df){
+  while(nrow(df) > 1){
+    m <- nrow(df)
+    
+    print(paste("number of elves left:", m))
+    
+    for(i in seq(1,(m-1), 2)){
+      df[i, 2] <- df[i,2] + df[i+1,2]
+    }
+    
+    if(m %% 2 == 0){
+      # df2 <- df %>% select(seq(1,m,2))
+      df2 <- df[c(seq(1,(m-1),2)),]
+    }else{
+      # df2 <- df %>% select(m, seq(1,(m-1),2))
+      df2 <- df[c(m, seq(1,(m-1),2)),]
+    }
+    df <- df2
+  }
+  df # return
+}
+```
+
+```{r}
+# example 1
+N <- 5
+elf <- 1:N
+presents <- rep(1,N)
+df <- data.frame(elf, presents)
+
+df_final <- dumb_elephant(df)
+print(paste("The elf with all of the presents is elf number", df_final$elf[1]))
+```
+```{r}
+# another trial run
+# example 1
+t1 <- proc.time()
+N <- 1337
+elf <- 1:N
+presents <- rep(1,N)
+df <- data.frame(elf, presents)
+
+df_final <- dumb_elephant(df)
+print(paste("The elf with all of the presents is elf number", df_final$elf[1]))
+t2 <- proc.time()
+t2 - t1
+```
+```{r}
+# main attempt
+t1 <- proc.time()
+N <- 3014603
+elf <- 1:N
+presents <- rep(1,N)
+df <- data.frame(elf, presents)
+
+df_final <- dumb_elephant(df)
+print(paste("The elf with all of the presents is elf number", df_final$elf[1]))
+t2 <- proc.time()
+t2 - t1
+
+# code barely started (memory limit?)
+```
+
+```{r}
+# a prime example of needing vectorized operations
+t1 <- proc.time()
+N <- 3014603
+# N <- 1337
+elves_left <- 1:N
+n <- length(elves_left)
+presents <- rep(1,N)
+
+while(n > 1){
+  if(n %% 2 == 0){
+    survivors <- elves_left[seq(1,(n-1),2)]
+    presents_updated <- presents[seq(1,(n-1),2)] + presents[seq(2,n,2)]
+  }else{
+    survivors <- c(elves_left[n], elves_left[seq(1,(n-1),2)])
+    presents_updated <- c(presents[n], presents[seq(1,(n-1),2)] + presents[seq(2,n,2)])
+  }
+  
+  elves_left <- survivors
+  presents <- presents_updated
+  n <- length(elves_left)
+}
+
+print(paste("Elves left:", elves_left))
+
+t2 <- proc.time()
+t2 - t1
+
+# 1834903 was the correct answer
+```
+
+--- Part Two ---
+
+Realizing the folly of their present-exchange rules, the Elves agree to instead steal presents from the Elf directly across the circle. If two Elves are across the circle, the one on the left (from the perspective of the stealer) is stolen from. The other rules remain unchanged: Elves with no presents are removed from the circle entirely, and the other elves move in slightly to keep the circle evenly spaced.
+
+For example, with five Elves (again numbered 1 to 5):
+
+    The Elves sit in a circle; Elf 1 goes first:
+
+      1
+    5   2
+     4 3
+
+    Elves 3 and 4 are across the circle; Elf 3's present is stolen, being the one to the left. Elf 3 leaves the circle, and the rest of the Elves move in:
+
+      1           1
+    5   2  -->  5   2
+     4 -          4
+
+    Elf 2 steals from the Elf directly across the circle, Elf 5:
+
+      1         1 
+    -   2  -->     2
+      4         4 
+
+    Next is Elf 4 who, choosing between Elves 1 and 2, steals from Elf 1:
+
+     -          2  
+        2  -->
+     4          4
+
+    Finally, Elf 2 steals from Elf 4:
+
+     2
+        -->  2  
+     -
+
+So, with five Elves, the Elf that sits starting in position 2 gets all the presents.
+
+With the number of Elves given in your puzzle input, which Elf now gets all the presents?
+
+```{r}
+t1 <- proc.time()
+N <- 3014603
+# N <- 5
+elves <- 1:N
+n <- length(elves)
+
+while(n > 2){
+  # print(elves)
+  after_cut <- elves[-ceiling(n/2)]
+  n <- length(after_cut)
+  elves <- after_cut[c(2:n, 1)]
+}
+
+puzzle_output <- paste("The winner is elf number", elves[1])
+write.table(puzzle_output, file = "20161219output.txt")
+t2 <- proc.time()
+t2 - t1
+```
+

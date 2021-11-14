@@ -149,7 +149,7 @@ The second disk you have to fill has length 35651584. Again using the initial st
 
 ```{r}
 x <- puzzle_input
-for(i in 1:10){
+for(i in 1:20){
   x <- dragon_curve(x)
   if(str_length(x) >= 35651584){
     break

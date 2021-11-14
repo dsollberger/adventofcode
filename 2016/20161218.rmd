@@ -1,0 +1,146 @@
+---
+title: "Day 18"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 18: Like a Rogue ---
+
+As you enter this room, you hear a loud click! Some of the tiles in the floor here seem to be pressure plates for traps, and the trap you just triggered has run out of... whatever it tried to do to you. You doubt you'll be so lucky next time.
+
+Upon closer examination, the traps and safe tiles in this room seem to follow a pattern. The tiles are arranged into rows that are all the same width; you take note of the safe tiles (.) and traps (^) in the first row (your puzzle input).
+
+The type of tile (trapped or safe) in each row is based on the types of the tiles in the same position, and to either side of that position, in the previous row. (If either side is off either end of the row, it counts as "safe" because there isn't a trap embedded in the wall.)
+
+For example, suppose you know the first row (with tiles marked by letters) and want to determine the next row (with tiles marked by numbers):
+
+ABCDE
+12345
+
+The type of tile 2 is based on the types of tiles A, B, and C; the type of tile 5 is based on tiles D, E, and an imaginary "safe" tile. Let's call these three tiles from the previous row the left, center, and right tiles, respectively. Then, a new tile is a trap only in one of the following situations:
+
+    Its left and center tiles are traps, but its right tile is not.
+    Its center and right tiles are traps, but its left tile is not.
+    Only its left tile is a trap.
+    Only its right tile is a trap.
+
+In any other situation, the new tile is safe.
+
+Then, starting with the row ..^^., you can determine the next row by applying those rules to each new tile:
+
+    The leftmost character on the next row considers the left (nonexistent, so we assume "safe"), center (the first ., which means "safe"), and right (the second ., also "safe") tiles on the previous row. Because all of the trap rules require a trap in at least one of the previous three tiles, the first tile on this new row is also safe, ..
+    The second character on the next row considers its left (.), center (.), and right (^) tiles from the previous row. This matches the fourth rule: only the right tile is a trap. Therefore, the next tile in this new row is a trap, ^.
+    The third character considers .^^, which matches the second trap rule: its center and right tiles are traps, but its left tile is not. Therefore, this tile is also a trap, ^.
+    The last two characters in this new row match the first and third rules, respectively, and so they are both also traps, ^.
+
+After these steps, we now know the next row of tiles in the room: .^^^^. Then, we continue on to the next row, using the same rules, and get ^^..^. After determining two new rows, our map looks like this:
+
+..^^.
+.^^^^
+^^..^
+
+Here's a larger example with ten tiles per row and ten rows:
+
+.^^.^.^^^^
+^^^...^..^
+^.^^.^.^^.
+..^^...^^^
+.^^^^.^^.^
+^^..^.^^..
+^^^^..^^^.
+^..^^^^.^^
+.^^^..^.^^
+^^.^^^..^^
+
+In ten rows, this larger example has 38 safe tiles.
+
+Starting with the map in your puzzle input, in a total of 40 rows (including the starting row), how many safe tiles are there?
+
+```{r}
+puzzle_input <- "^.^^^..^^...^.^..^^^^^.....^...^^^..^^^^.^^.^^^^^^^^.^^.^^^^...^^...^^^^.^.^..^^..^..^.^^.^.^......."
+```
+
+```{r}
+isTrap <- function(A, B, C){
+  pass_check <- FALSE
+  
+  if(A == "^" & B == "^" & C != "^"){ pass_check <- TRUE}
+  if(A != "^" & B == "^" & C == "^"){ pass_check <- TRUE}
+  if(A == "^" & B != "^" & C != "^"){ pass_check <- TRUE}
+  if(A != "^" & B != "^" & C == "^"){ pass_check <- TRUE}
+  
+  pass_check #return
+}
+```
+
+```{r}
+make_floorplan <- function(first_row, num_rows = 10){
+  split_first_row <- str_split(first_row, "")[[1]]
+  N <- length(split_first_row)
+  
+  floorplan <- matrix(rep(".", num_rows*(N+2)),
+                      nrow = num_rows, ncol = N + 2)
+  
+  floorplan[1, 2:(N+1)] <- split_first_row
+  for(i in 2:num_rows){
+    for(j in 2:(N+1)){
+      if(isTrap(floorplan[i-1,j-1], floorplan[i-1,j], floorplan[i-1,j+1])){
+        floorplan[i,j] <- "^"
+      }
+    }
+  }
+  floorplan #return
+}
+```
+
+```{r}
+# example 1
+make_floorplan("..^^.")
+```
+```{r}
+# example 2
+num_rows <- 10
+ex2 <- make_floorplan(".^^.^.^^^^", num_rows)
+sum(ex2 == ".") - 2*num_rows
+```
+```{r}
+# for the stated puzzle
+num_rows <- 40
+part1 <- make_floorplan(puzzle_input, num_rows)
+sum(part1 == ".") - 2*num_rows
+#1913 was the correct answer
+```
+--- Part Two ---
+
+How many safe tiles are there in a total of 400000 rows?
+
+```{r}
+# for the stated puzzle
+num_rows <- 400000
+
+first_row <- paste0(".", puzzle_input, ".")
+this_row  <- str_split(first_row, "")[[1]]
+N <- length(this_row)
+num_safe  <- sum(this_row == ".") - 2
+
+for(i in 2:num_rows){
+  next_row <- rep(".", N)
+  for(j in 2:(N-1)){
+    if(isTrap(this_row[j-1], this_row[j], this_row[j+1])){
+      next_row[j] <- "^"
+    }
+  }
+  this_row <- next_row
+  num_safe <- num_safe + sum(this_row == ".") - 2
+  if( i %% 1000 == 0){ print(paste("row", i)) }
+}
+
+print(paste("The number of safe tiles is", num_safe))
+# 19993564 was the correct answer!
+```

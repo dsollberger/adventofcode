@@ -1,0 +1,301 @@
+---
+title: "Day 21"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 21: Scrambled Letters and Hash ---
+
+The computer system you're breaking into uses a weird scrambling function to store its passwords. It shouldn't be much trouble to create your own scrambled password so you can add it to the system; you just have to implement the scrambler.
+
+The scrambling function is a series of operations (the exact list is provided in your puzzle input). Starting with the password to be scrambled, apply each operation in succession to the string. The individual operations behave as follows:
+
+    swap position X with position Y means that the letters at indexes X and Y (counting from 0) should be swapped.
+    swap letter X with letter Y means that the letters X and Y should be swapped (regardless of where they appear in the string).
+    rotate left/right X steps means that the whole string should be rotated; for example, one right rotation would turn abcd into dabc.
+    rotate based on position of letter X means that the whole string should be rotated to the right based on the index of letter X (counting from 0) as determined before this instruction does any rotations. Once the index is determined, rotate the string to the right one time, plus a number of times equal to that index, plus one additional time if the index was at least 4.
+    reverse positions X through Y means that the span of letters at indexes X through Y (including the letters at X and Y) should be reversed in order.
+    move position X to position Y means that the letter which is at index X should be removed from the string, then inserted such that it ends up at index Y.
+
+For example, suppose you start with abcde and perform the following operations:
+
+    swap position 4 with position 0 swaps the first and last letters, producing the input for the next step, ebcda.
+    swap letter d with letter b swaps the positions of d and b: edcba.
+    reverse positions 0 through 4 causes the entire string to be reversed, producing abcde.
+    rotate left 1 step shifts all letters left one position, causing the first letter to wrap to the end of the string: bcdea.
+    move position 1 to position 4 removes the letter at position 1 (c), then inserts it at position 4 (the end of the string): bdeac.
+    move position 3 to position 0 removes the letter at position 3 (a), then inserts it at position 0 (the front of the string): abdec.
+    rotate based on position of letter b finds the index of letter b (1), then rotates the string right once plus a number of times equal to that index (2): ecabd.
+    rotate based on position of letter d finds the index of letter d (4), then rotates the string right once, plus a number of times equal to that index, plus an additional time because the index was at least 4, for a total of 6 right rotations: decab.
+
+After these steps, the resulting scrambled password is decab.
+
+Now, you just need to generate a new scrambled password and you can access the system. Given the list of scrambling operations in your puzzle input, what is the result of scrambling abcdefgh?
+
+```{r}
+puzzle_input <- readLines("20161221input.txt")
+pass_input   <- "abcdefgh"
+N <- length(puzzle_input)
+n <- str_length(pass_input)
+```
+
+```{r}
+rotate_str <- function(this_string, this_offset = 1){
+  this_string_split <- str_split(this_string, "")[[1]]
+  x <- this_offset %% length(this_string_split)
+  if(x != 0){
+    this_string_split <- c(tail(this_string_split, x), 
+                        head(this_string_split, -x))
+  }
+  #return
+  paste0(this_string_split, collapse = "")
+}
+```
+
+
+```{r}
+password <- pass_input
+
+for(i in 1:N){
+  instruction <- puzzle_input[i]
+  pass_split  <- str_split(password, "")[[1]]
+  print(instruction)
+  
+  if(str_starts(instruction, "swap position")){
+    instruction_split <- str_split(instruction, " with position ")[[1]]
+    index1 <- as.numeric(str_sub(instruction_split[1], -1)) + 1
+    index2 <- as.numeric(instruction_split[2]) + 1
+    pass_split[c(index2,index1)] <- pass_split[c(index1,index2)]
+    password <- paste0(pass_split, collapse = "")
+  }
+  
+  if(str_starts(instruction, "swap letter")){
+    instruction_split <- str_split(instruction, " with letter ")[[1]]
+    letter1 <- str_sub(instruction_split[1], -1)
+    letter2 <- instruction_split[2]
+    index1  <- which.max(pass_split == letter1)
+    index2  <- which.max(pass_split == letter2)
+    pass_split[c(index2,index1)] <- pass_split[c(index1,index2)]
+    password <- paste0(pass_split, collapse = "")
+  }
+  
+  if(str_starts(instruction, "rotate left")){
+    instruction_split <- str_split(instruction, " step")[[1]]
+    num_steps <- -1*as.numeric(str_sub(instruction_split[1], -1))
+    password <- rotate_str(password, num_steps)
+  }
+  
+  if(str_starts(instruction, "rotate right")){
+    instruction_split <- str_split(instruction, " step")[[1]]
+    num_steps <- as.numeric(str_sub(instruction_split[1], -1))
+    password <- rotate_str(password, num_steps)
+  }
+  
+  if(str_starts(instruction, "rotate based")){
+    instruction_split <- str_split(instruction, "letter ")[[1]]
+    letter1 <- str_sub(instruction_split[2], 1)
+    num_steps <- which.max(pass_split == letter1)
+    if(num_steps >= 5){ num_steps <- num_steps + 1}
+    # num_steps <- num_steps + 1
+    password <- rotate_str(password, num_steps)
+  }
+  
+  if(str_starts(instruction, "reverse positions")){
+    instruction_split <- str_split(instruction, " through ")[[1]]
+    index1 <- as.numeric(str_sub(instruction_split[1], -1)) + 1
+    index2 <- as.numeric(instruction_split[2]) + 1
+    pass_split[index1:index2] <- rev(pass_split[index1:index2])
+    password <- paste0(pass_split, collapse = "")
+  }
+  
+  if(str_starts(instruction, "move position")){
+    instruction_split <- str_split(instruction, " to position ")[[1]]
+    index1 <- as.numeric(str_sub(instruction_split[1], -1)) + 1
+    index2 <- as.numeric(instruction_split[2])
+    letter1 <- pass_split[index1]
+    
+    #remove letter
+    pass_split <- pass_split[-index1]
+    
+    #insert letter
+    pass_split <- append(pass_split, letter1, after = index2)
+    
+    password <- paste0(pass_split, collapse = "")
+  }
+  
+  print(password)
+}
+# dbefcgha was not the correct answer
+# ghfdcbea was not the correct answer
+# bacfdgeh was not the correct answer
+# gacefhbd was not the correct answer
+# bgfacdeh was the correct answer!
+```
+--- Part Two ---
+
+You scrambled the password correctly, but you discover that you can't actually modify the password file on the system. You'll need to un-scramble one of the existing passwords by reversing the scrambling process.
+
+What is the un-scrambled version of the scrambled password fbgdceah?
+
+```{r, eval = TRUE}
+password <- "fbgdceah"
+
+for(i in N:1){
+  instruction <- puzzle_input[i]
+  pass_split  <- str_split(password, "")[[1]]
+  print(instruction)
+  
+  if(str_starts(instruction, "swap position")){
+    instruction_split <- str_split(instruction, " with position ")[[1]]
+    index1 <- as.numeric(str_sub(instruction_split[1], -1)) + 1
+    index2 <- as.numeric(instruction_split[2]) + 1
+    pass_split[c(index2,index1)] <- pass_split[c(index1,index2)]
+    password <- paste0(pass_split, collapse = "")
+  }
+  
+  if(str_starts(instruction, "swap letter")){
+    instruction_split <- str_split(instruction, " with letter ")[[1]]
+    letter1 <- str_sub(instruction_split[1], -1)
+    letter2 <- instruction_split[2]
+    index1  <- which.max(pass_split == letter1)
+    index2  <- which.max(pass_split == letter2)
+    pass_split[c(index2,index1)] <- pass_split[c(index1,index2)]
+    password <- paste0(pass_split, collapse = "")
+  }
+  
+  if(str_starts(instruction, "rotate left")){
+    instruction_split <- str_split(instruction, " step")[[1]]
+    num_steps <- as.numeric(str_sub(instruction_split[1], -1))
+    password <- rotate_str(password, num_steps)
+  }
+  
+  if(str_starts(instruction, "rotate right")){
+    instruction_split <- str_split(instruction, " step")[[1]]
+    num_steps <- -1*as.numeric(str_sub(instruction_split[1], -1))
+    password <- rotate_str(password, num_steps)
+  }
+  
+  if(str_starts(instruction, "rotate based")){
+    instruction_split <- str_split(instruction, "letter ")[[1]]
+    letter1 <- str_sub(instruction_split[2], 1)
+    num_steps <- which.max(pass_split == letter1)
+    if(num_steps >= 5){ num_steps <- num_steps + 1}
+    num_steps <- -1*num_steps
+    password <- rotate_str(password, num_steps)
+  }
+  
+  if(str_starts(instruction, "reverse positions")){
+    instruction_split <- str_split(instruction, " through ")[[1]]
+    index1 <- as.numeric(str_sub(instruction_split[1], -1)) + 1
+    index2 <- as.numeric(instruction_split[2]) + 1
+    pass_split[index1:index2] <- rev(pass_split[index1:index2])
+    password <- paste0(pass_split, collapse = "")
+  }
+  
+  if(str_starts(instruction, "move position")){
+    instruction_split <- str_split(instruction, " to position ")[[1]]
+    index1 <- as.numeric(str_sub(instruction_split[1], -1)) + 1
+    index2 <- as.numeric(instruction_split[2]) + 1
+    
+    #swap
+    temp <- index1
+    index1 <- index2
+    index2 <- temp
+    
+    letter1 <- pass_split[index1]
+    
+    #remove letter
+    pass_split <- pass_split[-index1]
+    
+    #insert letter
+    pass_split <- append(pass_split, letter1, after = index2)
+    
+    password <- paste0(pass_split, collapse = "")
+  }
+  
+  print(password)
+}
+# fehcabdg was not the correct answer
+# bghfdaec was not the correct answer
+```
+
+```{r, eval = FALSE}
+password <- "fbgdceah"
+
+for(i in N:1){
+  instruction <- puzzle_input[i]
+  pass_split  <- str_split(password, "")[[1]]
+  print(instruction)
+  
+  if(str_starts(instruction, "swap position")){
+    instruction_split <- str_split(instruction, " with position ")[[1]]
+    index1 <- as.numeric(str_sub(instruction_split[1], -1)) + 1
+    index2 <- as.numeric(instruction_split[2]) + 1
+    pass_split[c(index2,index1)] <- pass_split[c(index1,index2)]
+    password <- paste0(pass_split, collapse = "")
+  }
+  
+  if(str_starts(instruction, "swap letter")){
+    instruction_split <- str_split(instruction, " with letter ")[[1]]
+    letter1 <- str_sub(instruction_split[1], -1)
+    letter2 <- instruction_split[2]
+    index1  <- which.max(pass_split == letter1)
+    index2  <- which.max(pass_split == letter2)
+    pass_split[c(index2,index1)] <- pass_split[c(index1,index2)]
+    password <- paste0(pass_split, collapse = "")
+  }
+  
+  if(str_starts(instruction, "rotate left")){
+    instruction_split <- str_split(instruction, " step")[[1]]
+    num_steps <- -1*as.numeric(str_sub(instruction_split[1], -1))
+    password <- rotate_str(password, num_steps)
+  }
+  
+  if(str_starts(instruction, "rotate right")){
+    instruction_split <- str_split(instruction, " step")[[1]]
+    num_steps <- as.numeric(str_sub(instruction_split[1], -1))
+    password <- rotate_str(password, num_steps)
+  }
+  
+  if(str_starts(instruction, "rotate based")){
+    instruction_split <- str_split(instruction, "letter ")[[1]]
+    letter1 <- str_sub(instruction_split[2], 1)
+    num_steps <- which.max(pass_split == letter1)
+    if(num_steps >= 5){ num_steps <- num_steps + 1}
+    # num_steps <- num_steps + 1
+    password <- rotate_str(password, num_steps)
+  }
+  
+  if(str_starts(instruction, "reverse positions")){
+    instruction_split <- str_split(instruction, " through ")[[1]]
+    index1 <- as.numeric(str_sub(instruction_split[1], -1)) + 1
+    index2 <- as.numeric(instruction_split[2]) + 1
+    pass_split[index1:index2] <- rev(pass_split[index1:index2])
+    password <- paste0(pass_split, collapse = "")
+  }
+  
+  if(str_starts(instruction, "move position")){
+    instruction_split <- str_split(instruction, " to position ")[[1]]
+    index1 <- as.numeric(str_sub(instruction_split[1], -1)) + 1
+    index2 <- as.numeric(instruction_split[2])
+    letter1 <- pass_split[index1]
+    
+    #remove letter
+    pass_split <- pass_split[-index1]
+    
+    #insert letter
+    pass_split <- append(pass_split, letter1, after = index2)
+    
+    password <- paste0(pass_split, collapse = "")
+  }
+  
+  print(password)
+}
+# cbgeafhd was not the correct answer
+```
