@@ -1,5 +1,5 @@
 ---
-title: "Day 5"
+title: "Day 6"
 author: "Derek Sollberger"
 date: "11/3/2021"
 output: html_document
@@ -54,6 +54,7 @@ light_matrix <- matrix(rep(0, 1e6), nrow = 1000, ncol = 1000)
 ```{r}
 # main loop
 # for(k in 1:10){
+t1 <- proc.time()
 for(k in 1:length(santas_list_raw)){
   this_task <- santas_list_raw[k]
   
@@ -90,10 +91,9 @@ for(k in 1:length(santas_list_raw)){
     }
   }
 }
-```
-
-```{r}
 sum(light_matrix)
+t2 <- proc.time()
+t2 - t1
 ```
 
 --- Part Two ---

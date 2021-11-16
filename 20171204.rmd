@@ -1,0 +1,108 @@
+---
+title: "Day 4"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 4: High-Entropy Passphrases ---
+
+A new system policy has been put in place that requires all accounts to use a passphrase instead of simply a password. A passphrase consists of a series of words (lowercase letters) separated by spaces.
+
+To ensure security, a valid passphrase must contain no duplicate words.
+
+For example:
+
+    aa bb cc dd ee is valid.
+    aa bb cc dd aa is not valid - the word aa appears more than once.
+    aa bb cc dd aaa is valid - aa and aaa count as different words.
+
+The system's full passphrase list is available as your puzzle input. How many passphrases are valid?
+
+```{r}
+puzzle_input <- readLines("20171204input.txt")
+N <- length(puzzle_input)
+```
+
+```{r}
+is_valid <- function(this_string){
+  pass_check <- TRUE
+  this_split <- str_split(this_string, " ")[[1]]
+  n <- length(this_split)
+  for(j in 1:(n-1)){
+    for(k in 2:n){
+      if(j != k){
+        if(this_split[j] == this_split[k]){
+          pass_check <- FALSE
+        }
+      }
+    }
+  }
+  pass_check #return
+}
+```
+
+
+```{r}
+num_valid <- 0
+for(i in 1:N){
+  if(is_valid(puzzle_input[i])){
+    num_valid <- num_valid + 1
+  }
+}
+print(paste("There are", num_valid, "valid passphrases"))
+# 166 is too low
+# 451 was the correct answer
+```
+--- Part Two ---
+
+For added security, yet another system policy has been put in place. Now, a valid passphrase must contain no two words that are anagrams of each other - that is, a passphrase is invalid if any word's letters can be rearranged to form any other word in the passphrase.
+
+For example:
+
+    abcde fghij is a valid passphrase.
+    abcde xyz ecdab is not valid - the letters from the third word can be rearranged to form the first word.
+    a ab abc abd abf abj is a valid passphrase, because all letters need to be used when forming another word.
+    iiii oiii ooii oooi oooo is valid.
+    oiii ioii iioi iiio is not valid - any of these words can be rearranged to form any other word.
+
+Under this new system policy, how many passphrases are valid?
+
+```{r}
+is_valid <- function(this_string){
+  pass_check <- TRUE
+  this_split <- str_split(this_string, " ")[[1]]
+  n <- length(this_split)
+  for(j in 1:(n-1)){
+    for(k in 2:n){
+      if(j != k){
+        word1 <- this_split[j]
+        word2 <- this_split[k]
+        anagram1 <- sort(str_split(word1, "")[[1]])
+        anagram2 <- sort(str_split(word2, "")[[1]])
+        
+        if( identical(anagram1, anagram2) ){
+          pass_check <- FALSE
+        }
+      }
+    }
+  }
+  pass_check #return
+}
+```
+
+```{r}
+num_valid <- 0
+for(i in 1:N){
+  if(is_valid(puzzle_input[i])){
+    num_valid <- num_valid + 1
+  }
+}
+print(paste("There are", num_valid, "valid passphrases"))
+# 223 was the correct answer!
+```

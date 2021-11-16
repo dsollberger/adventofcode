@@ -1,0 +1,200 @@
+---
+title: "Day 3"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+--- Day 3: Spiral Memory ---
+
+You come across an experimental new kind of memory stored on an infinite two-dimensional grid.
+
+Each square on the grid is allocated in a spiral pattern starting at a location marked 1 and then counting up while spiraling outward. For example, the first few squares are allocated like this:
+
+17  16  15  14  13
+18   5   4   3  12
+19   6   1   2  11
+20   7   8   9  10
+21  22  23---> ...
+
+While this is very space-efficient (no squares are skipped), requested data must be carried back to square 1 (the location of the only access port for this memory system) by programs that can only move up, down, left, or right. They always take the shortest path: the Manhattan Distance between the location of the data and square 1.
+
+For example:
+
+    Data from square 1 is carried 0 steps, since it's at the access port.
+    Data from square 12 is carried 3 steps, such as: down, left, left.
+    Data from square 23 is carried only 2 steps: up twice.
+    Data from square 1024 must be carried 31 steps.
+
+How many steps are required to carry the data from the square identified in your puzzle input all the way to the access port?
+
+```{r}
+puzzle_input <- 289326
+```
+
+```{r}
+# https://math.stackexchange.com/questions/163080/on-a-two-dimensional-grid-is-there-a-formula-i-can-use-to-spiral-coordinates-in
+
+spiral_location <- function(n){
+  x <- 0
+  y <- 0
+  k <- ceiling((sqrt(n) - 1)/2)
+  t <- 2*k + 1
+  m = t^2
+  t = t-1
+  
+  if(n >= m-t){
+    x <- k - (m-n)
+    y <- -k
+  }else{
+    m = m - t
+  }
+  
+  if(n >= m-t){
+    x <- -k
+    y <- -k + (m-n)
+  }else{
+    m = m - t
+  }
+  
+  if(n >= m-t){
+    x <- -k + (m-n)
+    # y <- -k
+    y <- k
+  }else{
+    x <- k
+    y <- k - (m - n - t)
+  }
+  c(x,y) #return
+}
+
+spiral_location(12)
+spiral_location(23)
+spiral_location(1024)
+```
+```{r}
+print(paste("The number of steps needed is",
+            sum(abs(spiral_location(puzzle_input)))))
+# 419 was the correct answer
+```
+
+--- Part Two ---
+
+As a stress test on the system, the programs here clear the grid and then store the value 1 in square 1. Then, in the same allocation order as shown above, they store the sum of the values in all adjacent squares, including diagonals.
+
+So, the first few squares' values are chosen as follows:
+
+    Square 1 starts with the value 1.
+    Square 2 has only one adjacent filled square (with value 1), so it also stores 1.
+    Square 3 has both of the above squares as neighbors and stores the sum of their values, 2.
+    Square 4 has all three of the aforementioned squares as neighbors and stores the sum of their values, 4.
+    Square 5 only has the first and fourth squares as neighbors, so it gets the value 5.
+
+Once a square is written, its value does not change. Therefore, the first few squares would receive the following values:
+
+147  142  133  122   59
+304    5    4    2   57
+330   10    1    1   54
+351   11   23   25   26
+362  747  806--->   ...
+
+What is the first value written that is larger than your puzzle input?
+
+```{r, eval = FALSE}
+x <- rep(-17, 35)
+for(i in -16:17){ x <- c(x, rep(i, 35)) }
+y <- rep(-17:17, 35)
+val <- rep(0, 35*35)
+df <- data.frame(x, y, val)
+```
+
+```{r, eval = FALSE}
+df$val[which.max(df$x == 0 & df$y == 0)] <- 1
+```
+
+```{r, eval = FALSE}
+for(i in 2:4){
+  coords <- spiral_location(i)
+  x_coord <- coords[1]
+  y_coord <- coords[2]
+  
+  df$val[which.max(df$x == x_coord & df$y == y_coord)] <-
+    df$val[which.max(df$x == x_coord-1 & df$y == y_coord+1)] +
+    df$val[which.max(df$x == x_coord   & df$y == y_coord+1)] +
+    df$val[which.max(df$x == x_coord+1 & df$y == y_coord+1)] +
+    df$val[which.max(df$x == x_coord-1 & df$y == y_coord)] +
+    df$val[which.max(df$x == x_coord+1 & df$y == y_coord)] +
+    df$val[which.max(df$x == x_coord-1 & df$y == y_coord-1)] +
+    df$val[which.max(df$x == x_coord   & df$y == y_coord-1)] +
+    df$val[which.max(df$x == x_coord+1 & df$y == y_coord-1)]
+  print(df$val[which.max(df$x == x_coord & df$y == y_coord)])
+}
+```
+```{r}
+M <- matrix(rep(0, 35*35), nrow = 35, ncol = 35)
+coin <- "tails"
+facing <- "right"
+side_length <- 1
+steps_left  <- side_length
+x <- 18
+y <- 18
+M[y,x] <- 1
+
+for(i in 2:100){
+  
+  # reach a corner
+  if(steps_left == 0){
+    if(facing == "right"){
+      facing <- "up"
+    }else if(facing == "up"){
+      facing <- "left"
+    }else if(facing == "left"){
+      facing <- "down"
+    }else{
+      facing <- "right"
+    }
+    if(coin == "heads"){
+      side_length <- side_length + 1
+      coin <- "tails"
+    }else{
+      coin <- "heads"
+    }
+    
+    steps_left <- side_length
+  }
+  
+  if(facing == "right"){
+    x <- x + 1
+  }else if(facing == "up"){
+    y <- y + 1
+  }else if(facing == "left"){
+    x <- x - 1
+  }else{
+    y <- y - 1
+  }
+  steps_left <- steps_left - 1
+  
+  # M[y,x] <- i
+  M[y,x] <-
+    M[y-1, x+1] +
+    M[y,   x+1] +
+    M[y+1, x+1] +
+    M[y-1, x] +
+    M[y+1, x] +
+    M[y-1, x-1] +
+    M[y,   x-1] +
+    M[y+1, x-1]
+  
+  if(M[y,x] > puzzle_input){
+    break
+  }
+}
+# M[13:23, 13:23]
+print(paste("The answer is", M[y,x]))
+# 295229 was the correct answer!
+```
+
