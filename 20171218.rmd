@@ -1,0 +1,355 @@
+---
+title: "Day 18"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+--- Day 18: Duet ---
+
+You discover a tablet containing some strange assembly code labeled simply "Duet". Rather than bother the sound card with it, you decide to run the code yourself. Unfortunately, you don't see any documentation, so you're left to figure out what the instructions mean on your own.
+
+It seems like the assembly is meant to operate on a set of registers that are each named with a single letter and that can each hold a single integer. You suppose each register should start with a value of 0.
+
+There aren't that many instructions, so it shouldn't be hard to figure out what they do. Here's what you determine:
+
+    snd X plays a sound with a frequency equal to the value of X.
+    set X Y sets register X to the value of Y.
+    add X Y increases register X by the value of Y.
+    mul X Y sets register X to the result of multiplying the value contained in register X by the value of Y.
+    mod X Y sets register X to the remainder of dividing the value contained in register X by the value of Y (that is, it sets X to the result of X modulo Y).
+    rcv X recovers the frequency of the last sound played, but only when the value of X is not zero. (If it is zero, the command does nothing.)
+    jgz X Y jumps with an offset of the value of Y, but only if the value of X is greater than zero. (An offset of 2 skips the next instruction, an offset of -1 jumps to the previous instruction, and so on.)
+
+Many of the instructions can take either a register (a single letter) or a number. The value of a register is the integer it contains; the value of a number is that number.
+
+After each jump instruction, the program continues with the instruction to which the jump jumped. After any other instruction, the program continues with the next instruction. Continuing (or jumping) off either end of the program terminates it.
+
+For example:
+
+set a 1
+add a 2
+mul a a
+mod a 5
+snd a
+set a 0
+rcv a
+jgz a -1
+set a 1
+jgz a -2
+
+    The first four instructions set a to 1, add 2 to it, square it, and then set it to itself modulo 5, resulting in a value of 4.
+    Then, a sound with frequency 4 (the value of a) is played.
+    After that, a is set to 0, causing the subsequent rcv and jgz instructions to both be skipped (rcv because a is 0, and jgz because a is not greater than 0).
+    Finally, a is set to 1, causing the next jgz instruction to activate, jumping back two instructions to another jump, which jumps again to the rcv, which ultimately triggers the recover operation.
+
+At the time the recover operation is executed, the frequency of the last sound played is 4.
+
+What is the value of the recovered frequency (the value of the most recently played sound) the first time a rcv instruction is executed with a non-zero value?
+
+```{r}
+t1 <- proc.time()
+curr_pos <- 1 # our current position
+curr_sound <- 1337
+a <- 0
+b <- 0
+f <- 0
+i <- 0
+p <- 0
+
+for(j in 1:157){
+  # set i 31
+  if(curr_pos == 1){
+    i <- 31
+    curr_pos <- curr_pos + 1
+  }
+  
+  # set a 1
+  if(curr_pos == 2){
+    a <- 1
+    curr_pos <- curr_pos + 1
+  }
+  
+  # mul p 17
+  if(curr_pos == 3){
+    p <- p * 17
+    curr_pos <- curr_pos + 1
+  }
+  
+  # jgz p p
+  if(curr_pos == 4){
+    if(p > 0){
+      curr_pos <- curr_pos + p
+    }else{
+      curr_pos <- curr_pos + 1
+    }
+  }
+  
+  # mul a 2
+  if(curr_pos == 5){
+    a <- a * 2
+    curr_pos <- curr_pos + 1
+  }
+  
+  # add i -1
+  if(curr_pos == 6){
+    i <- i - 1
+    curr_pos <- curr_pos + 1
+  }
+  
+  # jgz i -2
+  if(curr_pos == 7){
+    if(i > 0){
+      curr_pos <- curr_pos - 2
+    }else{
+      curr_pos <- curr_pos + 1
+    }
+  }
+  
+  # add a -1
+  if(curr_pos == 8){
+    i <- a - 1
+    curr_pos <- curr_pos + 1
+  }
+  
+  # set i 127
+  if(curr_pos == 9){
+    i <- 127
+    curr_pos <- curr_pos + 1
+  }
+  
+  # set p 735
+  if(curr_pos == 10){
+    p <- 735
+    curr_pos <- curr_pos + 1
+  }
+  
+  # mul p 8505
+  if(curr_pos == 11){
+    p <- p * 8505
+    curr_pos <- curr_pos + 1
+  }
+  
+  # mod p a
+  if(curr_pos == 12){
+    p <- p %% a
+    curr_pos <- curr_pos + 1
+  }
+  
+  # mul p 129749
+  if(curr_pos == 13){
+    p <- p * 129749
+    curr_pos <- curr_pos + 1
+  }
+  
+  # add p 12345
+  if(curr_pos == 14){
+    p <- p + 12345
+    curr_pos <- curr_pos + 1
+  }
+  
+  # mod p a
+  if(curr_pos == 15){
+    p <- p %% a
+    curr_pos <- curr_pos + 1
+  }
+  
+  # set b p
+  if(curr_pos == 16){
+    b <- p
+    curr_pos <- curr_pos + 1
+  }
+  
+  # mod b 10000
+  if(curr_pos == 17){
+    b <- b %% 10000
+    curr_pos <- curr_pos + 1
+  }
+  
+  # snd b
+  if(curr_pos == 18){
+    curr_sound <- b
+    curr_pos <- curr_pos + 1
+  }
+  
+  # add i -1
+  if(curr_pos == 19){
+    i <- i - 1
+    curr_pos <- curr_pos + 1
+  }
+  
+  # jgz i -9
+  if(curr_pos == 20){
+    if(i > 0){
+      curr_pos <- curr_pos - 9
+    }else{
+      curr_pos <- curr_pos + 1
+    }
+  }
+  
+  # jgz a 3
+  if(curr_pos == 21){
+    if(a > 0){
+      curr_pos <- curr_pos + 3
+    }else{
+      curr_pos <- curr_pos + 1
+    }
+  }
+  
+  # rcv b
+  if(curr_pos == 22){
+    if(b > 0){
+      print(paste("current sound:", curr_sound))
+      break
+    }
+    curr_pos <- curr_pos + 1
+  }
+  
+  # jgz b -1
+  if(curr_pos == 23){
+    if(b > 0){
+      curr_pos <- curr_pos - 1
+    }else{
+      curr_pos <- curr_pos + 1
+    }
+  }
+  
+  # set f 0
+  if(curr_pos == 24){
+    f <- 0
+    curr_pos <- curr_pos + 1
+  }
+  
+  # set i 126
+  if(curr_pos == 25){
+    i <- 126
+    curr_pos <- curr_pos + 1
+  }
+  
+  # rcv a
+  if(curr_pos == 26){
+    if(a > 0){
+      print(paste("current sound:", curr_sound))
+      break
+    }
+    curr_pos <- curr_pos + 1
+  }
+  
+  # rcv b
+  if(curr_pos == 27){
+    if(b > 0){
+      print(paste("current sound:", curr_sound))
+      break
+    }
+    curr_pos <- curr_pos + 1
+  }
+  
+  # set p a
+  if(curr_pos == 28){
+    p <- a
+    curr_pos <- curr_pos + 1
+  }
+  
+  # mul p -1
+  if(curr_pos == 29){
+    p <- p * -1
+    curr_pos <- curr_pos + 1
+  }
+  
+  # add p b
+  if(curr_pos == 30){
+    p <- p + b
+    curr_pos <- curr_pos + 1
+  }
+  
+  # jgz p 4
+  if(curr_pos == 31){
+    if(p > 0){
+      curr_pos <- curr_pos + 4
+    }else{
+      curr_pos <- curr_pos + 1
+    }
+  }
+  
+  # snd a
+  if(curr_pos == 32){
+    curr_sound <- a
+    curr_pos <- curr_pos + 1
+  }
+  
+  # set a b
+  if(curr_pos == 33){
+    a <- b
+    curr_pos <- curr_pos + 1
+  }
+  
+  # jgz 1 3
+  if(curr_pos == 34){
+    if(1 > 0){
+      curr_pos <- curr_pos + 3
+    }else{
+      curr_pos <- curr_pos + 1
+    }
+  }
+  
+  # snd b
+  if(curr_pos == 35){
+    curr_sound <- b
+    curr_pos <- curr_pos + 1
+  }
+  
+  # set f 1
+  if(curr_pos == 36){
+    f <- 1
+    curr_pos <- curr_pos + 1
+  }
+  
+  # add i -1
+  if(curr_pos == 37){
+    i <- i - 1
+    curr_pos <- curr_pos + 1
+  }
+  
+  # jgz i -11
+  if(curr_pos == 38){
+    if(j > 0){
+      curr_pos <- curr_pos - 11
+    }else{
+      curr_pos <- curr_pos + 1
+    }
+  }
+  
+  # snd a
+  if(curr_pos == 39){
+    curr_sound <- a
+    curr_pos <- curr_pos + 1
+  }
+  
+  # jgz f -16
+  if(curr_pos == 40){
+    if(f > 0){
+      curr_pos <- curr_pos - 16
+    }else{
+      curr_pos <- curr_pos + 1
+    }
+  }
+  
+  # jgz a -19
+  if(curr_pos == 41){
+    if(a > 0){
+      curr_pos <- curr_pos - 19
+    }else{
+      curr_pos <- curr_pos + 1
+    }
+  }
+}
+t2 <- proc.time()
+t2 - t1
+# 2147483648 was too high
+# 862 was too low
+```
+

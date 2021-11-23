@@ -1,5 +1,5 @@
 ---
-title: "Day 3"
+title: "Day 13"
 author: "Derek Sollberger"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_document
@@ -7,194 +7,359 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
 ```
 
---- Day 3: Spiral Memory ---
+--- Day 13: Packet Scanners ---
 
-You come across an experimental new kind of memory stored on an infinite two-dimensional grid.
+You need to cross a vast firewall. The firewall consists of several layers, each with a security scanner that moves back and forth across the layer. To succeed, you must not be detected by a scanner.
 
-Each square on the grid is allocated in a spiral pattern starting at a location marked 1 and then counting up while spiraling outward. For example, the first few squares are allocated like this:
+By studying the firewall briefly, you are able to record (in your puzzle input) the depth of each layer and the range of the scanning area for the scanner within it, written as depth: range. Each layer has a thickness of exactly 1. A layer at depth 0 begins immediately inside the firewall; a layer at depth 1 would start immediately after that.
 
-17  16  15  14  13
-18   5   4   3  12
-19   6   1   2  11
-20   7   8   9  10
-21  22  23---> ...
+For example, suppose you've recorded the following:
 
-While this is very space-efficient (no squares are skipped), requested data must be carried back to square 1 (the location of the only access port for this memory system) by programs that can only move up, down, left, or right. They always take the shortest path: the Manhattan Distance between the location of the data and square 1.
+0: 3
+1: 2
+4: 4
+6: 4
 
-For example:
+This means that there is a layer immediately inside the firewall (with range 3), a second layer immediately after that (with range 2), a third layer which begins at depth 4 (with range 4), and a fourth layer which begins at depth 6 (also with range 4). Visually, it might look like this:
 
-    Data from square 1 is carried 0 steps, since it's at the access port.
-    Data from square 12 is carried 3 steps, such as: down, left, left.
-    Data from square 23 is carried only 2 steps: up twice.
-    Data from square 1024 must be carried 31 steps.
+ 0   1   2   3   4   5   6
+[ ] [ ] ... ... [ ] ... [ ]
+[ ] [ ]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
 
-How many steps are required to carry the data from the square identified in your puzzle input all the way to the access port?
+Within each layer, a security scanner moves back and forth within its range. Each security scanner starts at the top and moves down until it reaches the bottom, then moves up until it reaches the top, and repeats. A security scanner takes one picosecond to move one step. Drawing scanners as S, the first few picoseconds look like this:
+
+
+Picosecond 0:
+ 0   1   2   3   4   5   6
+[S] [S] ... ... [S] ... [S]
+[ ] [ ]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+Picosecond 1:
+ 0   1   2   3   4   5   6
+[ ] [ ] ... ... [ ] ... [ ]
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+Picosecond 2:
+ 0   1   2   3   4   5   6
+[ ] [S] ... ... [ ] ... [ ]
+[ ] [ ]         [ ]     [ ]
+[S]             [S]     [S]
+                [ ]     [ ]
+
+Picosecond 3:
+ 0   1   2   3   4   5   6
+[ ] [ ] ... ... [ ] ... [ ]
+[S] [S]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [S]     [S]
+
+Your plan is to hitch a ride on a packet about to move through the firewall. The packet will travel along the top of each layer, and it moves at one layer per picosecond. Each picosecond, the packet moves one layer forward (its first move takes it into layer 0), and then the scanners move one step. If there is a scanner at the top of the layer as your packet enters it, you are caught. (If a scanner moves into the top of its layer while you are there, you are not caught: it doesn't have time to notice you before you leave.) If you were to do this in the configuration above, marking your current position with parentheses, your passage through the firewall would look like this:
+
+Initial state:
+ 0   1   2   3   4   5   6
+[S] [S] ... ... [S] ... [S]
+[ ] [ ]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+Picosecond 0:
+ 0   1   2   3   4   5   6
+(S) [S] ... ... [S] ... [S]
+[ ] [ ]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+( ) [ ] ... ... [ ] ... [ ]
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+
+Picosecond 1:
+ 0   1   2   3   4   5   6
+[ ] ( ) ... ... [ ] ... [ ]
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+[ ] (S) ... ... [ ] ... [ ]
+[ ] [ ]         [ ]     [ ]
+[S]             [S]     [S]
+                [ ]     [ ]
+
+
+Picosecond 2:
+ 0   1   2   3   4   5   6
+[ ] [S] (.) ... [ ] ... [ ]
+[ ] [ ]         [ ]     [ ]
+[S]             [S]     [S]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+[ ] [ ] (.) ... [ ] ... [ ]
+[S] [S]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [S]     [S]
+
+
+Picosecond 3:
+ 0   1   2   3   4   5   6
+[ ] [ ] ... (.) [ ] ... [ ]
+[S] [S]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [S]     [S]
+
+ 0   1   2   3   4   5   6
+[S] [S] ... (.) [ ] ... [ ]
+[ ] [ ]         [ ]     [ ]
+[ ]             [S]     [S]
+                [ ]     [ ]
+
+
+Picosecond 4:
+ 0   1   2   3   4   5   6
+[S] [S] ... ... ( ) ... [ ]
+[ ] [ ]         [ ]     [ ]
+[ ]             [S]     [S]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+[ ] [ ] ... ... ( ) ... [ ]
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+
+Picosecond 5:
+ 0   1   2   3   4   5   6
+[ ] [ ] ... ... [ ] (.) [ ]
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+[ ] [S] ... ... [S] (.) [S]
+[ ] [ ]         [ ]     [ ]
+[S]             [ ]     [ ]
+                [ ]     [ ]
+
+
+Picosecond 6:
+ 0   1   2   3   4   5   6
+[ ] [S] ... ... [S] ... (S)
+[ ] [ ]         [ ]     [ ]
+[S]             [ ]     [ ]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+[ ] [ ] ... ... [ ] ... ( )
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+In this situation, you are caught in layers 0 and 6, because your packet entered the layer when its scanner was at the top when you entered it. You are not caught in layer 1, since the scanner moved into the top of the layer once you were already there.
+
+The severity of getting caught on a layer is equal to its depth multiplied by its range. (Ignore layers in which you do not get caught.) The severity of the whole trip is the sum of these values. In the example above, the trip severity is 0*3 + 6*4 = 24.
+
+Given the details of the firewall you've recorded, if you leave immediately, what is the severity of your whole trip?
 
 ```{r}
-puzzle_input <- 289326
+puzzle_input <- readLines("20171213input.txt")
+N <- length(puzzle_input)
 ```
 
 ```{r}
-# https://math.stackexchange.com/questions/163080/on-a-two-dimensional-grid-is-there-a-formula-i-can-use-to-spiral-coordinates-in
+depth <- rep(NA, N)
+range <- rep(NA, N)
+scanner <- rep(NA, N)
+df <- data.frame(depth, range, scanner)
 
-spiral_location <- function(n){
-  x <- 0
-  y <- 0
-  k <- ceiling((sqrt(n) - 1)/2)
-  t <- 2*k + 1
-  m = t^2
-  t = t-1
-  
-  if(n >= m-t){
-    x <- k - (m-n)
-    y <- -k
+for(i in 1:N){
+  scanner_stats <- str_split(puzzle_input[i], ": ")[[1]]
+  df$depth[i] <- as.numeric(scanner_stats[1])
+  x <- as.numeric(scanner_stats[2])
+  df$range[i] <- x
+  if(x == 2){
+    df$scanner[i] <- list(rep(c(1:2), 100/2))
   }else{
-    m = m - t
+    df$scanner[i] <- list(rep(c(1:x, (x-1):2), ceiling(100 / (2*x - 2))))
   }
-  
-  if(n >= m-t){
-    x <- -k
-    y <- -k + (m-n)
-  }else{
-    m = m - t
-  }
-  
-  if(n >= m-t){
-    x <- -k + (m-n)
-    # y <- -k
-    y <- k
-  }else{
-    x <- k
-    y <- k - (m - n - t)
-  }
-  c(x,y) #return
 }
-
-spiral_location(12)
-spiral_location(23)
-spiral_location(1024)
 ```
+
 ```{r}
-print(paste("The number of steps needed is",
-            sum(abs(spiral_location(puzzle_input)))))
-# 419 was the correct answer
+severity <- 0
+for(t in 1:98){
+  if(t %in% df$depth){
+    row <- which.max(df$depth == t)
+    if(df$scanner[row][[1]][t+1] == 1){
+      severity <- severity + df$depth[row]*df$range[row]
+    }
+  }
+}
+print(paste("This trip's severity is", severity))
+# "2" was incorrect
+# 1704 was correct
 ```
 
 --- Part Two ---
 
-As a stress test on the system, the programs here clear the grid and then store the value 1 in square 1. Then, in the same allocation order as shown above, they store the sum of the values in all adjacent squares, including diagonals.
+Now, you need to pass through the firewall without being caught - easier said than done.
 
-So, the first few squares' values are chosen as follows:
+You can't control the speed of the packet, but you can delay it any number of picoseconds. For each picosecond you delay the packet before beginning your trip, all security scanners move one step. You're not in the firewall during this time; you don't enter layer 0 until you stop delaying the packet.
 
-    Square 1 starts with the value 1.
-    Square 2 has only one adjacent filled square (with value 1), so it also stores 1.
-    Square 3 has both of the above squares as neighbors and stores the sum of their values, 2.
-    Square 4 has all three of the aforementioned squares as neighbors and stores the sum of their values, 4.
-    Square 5 only has the first and fourth squares as neighbors, so it gets the value 5.
+In the example above, if you delay 10 picoseconds (picoseconds 0 - 9), you won't get caught:
 
-Once a square is written, its value does not change. Therefore, the first few squares would receive the following values:
+State after delaying:
+ 0   1   2   3   4   5   6
+[ ] [S] ... ... [ ] ... [ ]
+[ ] [ ]         [ ]     [ ]
+[S]             [S]     [S]
+                [ ]     [ ]
 
-147  142  133  122   59
-304    5    4    2   57
-330   10    1    1   54
-351   11   23   25   26
-362  747  806--->   ...
+Picosecond 10:
+ 0   1   2   3   4   5   6
+( ) [S] ... ... [ ] ... [ ]
+[ ] [ ]         [ ]     [ ]
+[S]             [S]     [S]
+                [ ]     [ ]
 
-What is the first value written that is larger than your puzzle input?
+ 0   1   2   3   4   5   6
+( ) [ ] ... ... [ ] ... [ ]
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
 
-```{r, eval = FALSE}
-x <- rep(-17, 35)
-for(i in -16:17){ x <- c(x, rep(i, 35)) }
-y <- rep(-17:17, 35)
-val <- rep(0, 35*35)
-df <- data.frame(x, y, val)
-```
 
-```{r, eval = FALSE}
-df$val[which.max(df$x == 0 & df$y == 0)] <- 1
-```
+Picosecond 11:
+ 0   1   2   3   4   5   6
+[ ] ( ) ... ... [ ] ... [ ]
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
 
-```{r, eval = FALSE}
-for(i in 2:4){
-  coords <- spiral_location(i)
-  x_coord <- coords[1]
-  y_coord <- coords[2]
-  
-  df$val[which.max(df$x == x_coord & df$y == y_coord)] <-
-    df$val[which.max(df$x == x_coord-1 & df$y == y_coord+1)] +
-    df$val[which.max(df$x == x_coord   & df$y == y_coord+1)] +
-    df$val[which.max(df$x == x_coord+1 & df$y == y_coord+1)] +
-    df$val[which.max(df$x == x_coord-1 & df$y == y_coord)] +
-    df$val[which.max(df$x == x_coord+1 & df$y == y_coord)] +
-    df$val[which.max(df$x == x_coord-1 & df$y == y_coord-1)] +
-    df$val[which.max(df$x == x_coord   & df$y == y_coord-1)] +
-    df$val[which.max(df$x == x_coord+1 & df$y == y_coord-1)]
-  print(df$val[which.max(df$x == x_coord & df$y == y_coord)])
+ 0   1   2   3   4   5   6
+[S] (S) ... ... [S] ... [S]
+[ ] [ ]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+
+Picosecond 12:
+ 0   1   2   3   4   5   6
+[S] [S] (.) ... [S] ... [S]
+[ ] [ ]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+[ ] [ ] (.) ... [ ] ... [ ]
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+
+Picosecond 13:
+ 0   1   2   3   4   5   6
+[ ] [ ] ... (.) [ ] ... [ ]
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+[ ] [S] ... (.) [ ] ... [ ]
+[ ] [ ]         [ ]     [ ]
+[S]             [S]     [S]
+                [ ]     [ ]
+
+
+Picosecond 14:
+ 0   1   2   3   4   5   6
+[ ] [S] ... ... ( ) ... [ ]
+[ ] [ ]         [ ]     [ ]
+[S]             [S]     [S]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+[ ] [ ] ... ... ( ) ... [ ]
+[S] [S]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [S]     [S]
+
+
+Picosecond 15:
+ 0   1   2   3   4   5   6
+[ ] [ ] ... ... [ ] (.) [ ]
+[S] [S]         [ ]     [ ]
+[ ]             [ ]     [ ]
+                [S]     [S]
+
+ 0   1   2   3   4   5   6
+[S] [S] ... ... [ ] (.) [ ]
+[ ] [ ]         [ ]     [ ]
+[ ]             [S]     [S]
+                [ ]     [ ]
+
+
+Picosecond 16:
+ 0   1   2   3   4   5   6
+[S] [S] ... ... [ ] ... ( )
+[ ] [ ]         [ ]     [ ]
+[ ]             [S]     [S]
+                [ ]     [ ]
+
+ 0   1   2   3   4   5   6
+[ ] [ ] ... ... [ ] ... ( )
+[S] [S]         [S]     [S]
+[ ]             [ ]     [ ]
+                [ ]     [ ]
+
+Because all smaller delays would get you caught, the fewest number of picoseconds you would need to delay to get through safely is 10.
+
+What is the fewest number of picoseconds that you need to delay the packet to pass through the firewall without being caught?
+
+
+```{r}
+compute_severity <- function(this_offset){
+  severity <- 0
+  for(t in 1:98){
+    if(t %in% df$depth){
+      row <- which.max(df$depth == t)
+      n <- df$range[row]
+      whereabouts <- (t + 1 + this_offset) %% (2*n - 2)
+      if(whereabouts == 0) { whereabouts <- 2*n - 2 }
+      if(df$scanner[row][[1]][whereabouts] == 1){
+        severity <- severity + df$depth[row]*df$range[row]
+      }
+    }
+  }
+  severity #return
 }
+compute_severity(0)
 ```
 ```{r}
-M <- matrix(rep(0, 35*35), nrow = 35, ncol = 35)
-coin <- "tails"
-facing <- "right"
-side_length <- 1
-steps_left  <- side_length
-x <- 18
-y <- 18
-M[y,x] <- 1
-
-for(i in 2:100){
-  
-  # reach a corner
-  if(steps_left == 0){
-    if(facing == "right"){
-      facing <- "up"
-    }else if(facing == "up"){
-      facing <- "left"
-    }else if(facing == "left"){
-      facing <- "down"
-    }else{
-      facing <- "right"
-    }
-    if(coin == "heads"){
-      side_length <- side_length + 1
-      coin <- "tails"
-    }else{
-      coin <- "heads"
-    }
-    
-    steps_left <- side_length
-  }
-  
-  if(facing == "right"){
-    x <- x + 1
-  }else if(facing == "up"){
-    y <- y + 1
-  }else if(facing == "left"){
-    x <- x - 1
-  }else{
-    y <- y - 1
-  }
-  steps_left <- steps_left - 1
-  
-  # M[y,x] <- i
-  M[y,x] <-
-    M[y-1, x+1] +
-    M[y,   x+1] +
-    M[y+1, x+1] +
-    M[y-1, x] +
-    M[y+1, x] +
-    M[y-1, x-1] +
-    M[y,   x-1] +
-    M[y+1, x-1]
-  
-  if(M[y,x] > puzzle_input){
+t1 <- proc.time()
+wait_time <- 0
+for(T in 1:1e6){
+  if(compute_severity(T) == 0){
+    wait_time <- T
     break
   }
 }
-# M[13:23, 13:23]
-print(paste("The answer is", M[y,x]))
-# 295229 was the correct answer!
+print(paste("We need to wait", wait_time, "picoseconds"))
+t2 <- proc.time()
+t2 - t1
+# 97048 was too low
 ```
 

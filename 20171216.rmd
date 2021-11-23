@@ -1,0 +1,130 @@
+---
+title: "Day 16"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 16: Permutation Promenade ---
+
+You come upon a very unusual sight; a group of programs here appear to be dancing.
+
+There are sixteen programs in total, named a through p. They start by standing in a line: a stands in position 0, b stands in position 1, and so on until p, which stands in position 15.
+
+The programs' dance consists of a sequence of dance moves:
+
+    Spin, written sX, makes X programs move from the end to the front, but maintain their order otherwise. (For example, s3 on abcde produces cdeab).
+    Exchange, written xA/B, makes the programs at positions A and B swap places.
+    Partner, written pA/B, makes the programs named A and B swap places.
+
+For example, with only five programs standing in a line (abcde), they could do the following dance:
+
+    s1, a spin of size 1: eabcd.
+    x3/4, swapping the last two programs: eabdc.
+    pe/b, swapping programs e and b: baedc.
+
+After finishing their dance, the programs end up in order baedc.
+
+You watch the dance for a while and record their dance moves (your puzzle input). In what order are the programs standing after their dance?
+
+```{r}
+puzzle_input <- readLines("20171216input.txt")
+```
+```{r}
+# example
+# dancers <- letters[1:5]
+# D <- length(dancers)
+# example_input <- "s1,x3/4,pe/b"
+# instructions <- str_split(example_input, ",")[[1]]
+# N <- length(instructions)
+
+# main puzzle
+t1 <- proc.time()
+dancers <- letters[1:16]
+D <- length(dancers)
+instructions <- str_split(puzzle_input, ",")[[1]]
+N <- length(instructions)
+
+for(i in 1:N){
+  # spin
+  if(str_starts(instructions[i], "s")){
+    this_offset <- as.numeric(str_extract(instructions[i], "(\\d)+")) %% D
+    if(this_offset == 0){ this_offset <- D }
+    dancers <- c(tail(dancers, this_offset), head(dancers, -this_offset))
+  }
+  
+  # exchange
+  if(str_starts(instructions[i], "x")){
+    this_pair <- as.numeric(
+      str_extract_all(instructions[i], "(\\d)+")[[1]]) + 1
+    new_dancers <- dancers
+    new_dancers[this_pair[1]] <- dancers[this_pair[2]]
+    new_dancers[this_pair[2]] <- dancers[this_pair[1]]
+    dancers <- new_dancers
+  }
+  
+  # partners
+  if(str_starts(instructions[i], "p")){
+    this_split <- str_split(instructions[i], "/")[[1]]
+    partner1 <- str_sub(this_split[1], 2)
+    partner2 <- this_split[2]
+    place1 <- which.max(dancers == partner1)
+    place2 <- which.max(dancers == partner2)
+    new_dancers <- dancers
+    new_dancers[place1] <- dancers[place2]
+    new_dancers[place2] <- dancers[place1]
+    dancers <- new_dancers
+  }
+}
+print("The dancers are now in order")
+print(paste0(dancers, collapse = ""))
+t2 <- proc.time()
+t2 - t1
+# kpbodeajhlicngmf was the correct answer
+```
+
+--- Part Two ---
+
+Now that you're starting to get a feel for the dance moves, you turn your attention to the dance as a whole.
+
+Keeping the positions they ended up in from their previous dance, the programs perform it again and again: including the first dance, a total of one billion (1000000000) times.
+
+In the example above, their second dance would begin with the order baedc, and use the same dance moves:
+
+    s1, a spin of size 1: cbaed.
+    x3/4, swapping the last two programs: cbade.
+    pe/b, swapping programs e and b: ceadb.
+
+In what order are the programs standing after their billion dances?
+
+```{r}
+# main puzzle
+t1 <- proc.time()
+dancers <- letters[1:16]
+D <- length(dancers)
+instructions <- str_split(puzzle_input, ",")[[1]]
+N <- length(instructions)
+
+for(k in 1:6){
+  new_dancers <- rep(NA, D)
+  new_dancers <- dancers[c(11,16,2,15,4,5,1,10,8,12,9,3,14,7,13,6)]
+  # if(identical(new_dancers, letters[1:16])){
+  #   print(paste("Original position reached at iteration", k))
+  #   break
+  # }
+  # cycle was found after 16 iterations, so change max to
+  # 1e9 %% 17?
+  dancers <- new_dancers
+}
+
+print("The dancers are now in order")
+print(paste0(dancers, collapse = ""))
+t2 <- proc.time()
+t2 - t1
+```
+

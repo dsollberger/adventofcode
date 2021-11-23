@@ -1,0 +1,283 @@
+---
+title: "Day 12"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 12: Digital Plumber ---
+
+Walking along the memory banks of the stream, you find a small village that is experiencing a little confusion: some programs can't communicate with each other.
+
+Programs in this village communicate using a fixed system of pipes. Messages are passed between programs using these pipes, but most programs aren't connected to each other directly. Instead, programs pass messages between each other until the message reaches the intended recipient.
+
+For some reason, though, some of these messages aren't ever reaching their intended recipient, and the programs suspect that some pipes are missing. They would like you to investigate.
+
+You walk through the village and record the ID of each program and the IDs with which it can communicate directly (your puzzle input). Each program has one or more programs with which it can communicate, and these pipes are bidirectional; if 8 says it can communicate with 11, then 11 will say it can communicate with 8.
+
+You need to figure out how many programs are in the group that contains program ID 0.
+
+For example, suppose you go door-to-door like a travelling salesman and record the following list:
+
+0 <-> 2
+1 <-> 1
+2 <-> 0, 3, 4
+3 <-> 2, 4
+4 <-> 2, 3, 6
+5 <-> 6
+6 <-> 4, 5
+
+In this example, the following programs are in the group that contains program ID 0:
+
+    Program 0 by definition.
+    Program 2, directly connected to program 0.
+    Program 3 via program 2.
+    Program 4 via program 2.
+    Program 5 via programs 6, then 4, then 2.
+    Program 6 via programs 4, then 2.
+
+Therefore, a total of 6 programs are in this group; all but program 1, which has a pipe that connects it to itself.
+
+How many programs are in the group that contains program ID 0?
+
+```{r}
+puzzle_input <- readLines("20171212input.txt")
+```
+
+```{r}
+ID <- 1:2000
+connections <- rep(NA, 2000)
+containsZero <- rep(FALSE, 2000)
+df <- data.frame(ID, connections, containsZero)
+df$containsZero[2000] <- TRUE
+df$connections[2000] <- 795
+df$containsZero[795] <- TRUE
+zero_cluster_size <- sum(df$containsZero)
+
+for(i in 2:2000){
+  instruction_split <- str_split(puzzle_input[i], " <-> ")[[1]]
+  this_node <- as.numeric(instruction_split[1])
+  these_connections <- list(str_split(instruction_split[2], ", ")[[1]])
+  df$connections[this_node] <- these_connections
+}
+```
+
+```{r}
+t1 <- proc.time()
+for(k in 1:1999){ #run many times
+  for(i in 1:1999){
+    if(df$containsZero[i]){
+      these_connections <- as.numeric(df$connections[i][[1]])
+      n <- length(these_connections)
+      
+      for(j in 1:n){
+        df$containsZero[these_connections[j]] <- TRUE
+      }
+    }
+    zero_cluster_size <- sum(df$containsZero)
+  }
+}
+print(paste("There are", zero_cluster_size, "nodes that communicate with Program Zero."))
+t2 <- proc.time()
+t2 - t1
+# 129 was too low
+# 130 was the correct answer
+```
+
+--- Part Two ---
+
+There are more programs than just the ones in the group containing program ID 0. The rest of them have no way of reaching that group, and still might have no way of reaching each other.
+
+A group is a collection of programs that can all communicate via pipes either directly or indirectly. The programs you identified just a moment ago are all part of the same group. Now, they would like you to determine the total number of groups.
+
+In the example above, there were 2 groups: one consisting of programs 0,2,3,4,5,6, and the other consisting solely of program 1.
+
+How many groups are there in total?
+
+```{r}
+# df2 <- df %>% filter(!containsZero)
+df$contains1 <- rep(FALSE, 2000)
+df$contains1[1] <- TRUE
+df$contains1[as.numeric(df$connections[1][[1]])] <- TRUE
+
+for(k in 1:2000){ #run many times
+  for(i in 2:2000){
+    if(df$contains1[i]){
+      these_connections <- as.numeric(df$connections[i][[1]])
+      n <- length(these_connections)
+      
+      for(j in 1:n){
+        df$contains1[these_connections[j]] <- TRUE
+      }
+    }
+    cluster_size <- sum(df$contains1)
+  }
+}
+print(paste("There are", 
+            cluster_size, 
+            "nodes that communicate with Program",
+            df$ID[1]))
+print(paste("The next cluster has node",
+            which.max(!df$containsZero & !df$contains1)))
+```
+```{r}
+df$contains2 <- rep(FALSE, 2000)
+df$contains2[2] <- TRUE
+df$contains2[as.numeric(df$connections[2][[1]])] <- TRUE
+
+for(k in 1:2000){ #run many times
+  for(i in 2:2000){
+    if(df$contains2[i]){
+      these_connections <- as.numeric(df$connections[i][[1]])
+      n <- length(these_connections)
+      
+      for(j in 1:n){
+        df$contains2[these_connections[j]] <- TRUE
+      }
+    }
+    cluster_size <- sum(df$contains2)
+  }
+}
+print(paste("There are", 
+            cluster_size, 
+            "nodes that communicate with Program",
+            df$ID[2]))
+print(paste("The next cluster has node",
+            which.max(!df$containsZero & !df$contains1 & !df$contains2)))
+```
+```{r}
+df$contains4 <- rep(FALSE, 2000)
+df$contains4[4] <- TRUE
+df$contains4[as.numeric(df$connections[4][[1]])] <- TRUE
+
+for(k in 1:2000){ #run many times
+  for(i in 2:2000){
+    if(df$contains4[i]){
+      these_connections <- as.numeric(df$connections[i][[1]])
+      n <- length(these_connections)
+      
+      for(j in 1:n){
+        df$contains4[these_connections[j]] <- TRUE
+      }
+    }
+    cluster_size <- sum(df$contains4)
+  }
+}
+print(paste("There are", 
+            cluster_size, 
+            "nodes that communicate with Program",
+            df$ID[4]))
+print(paste("The next cluster has node",
+            which.max(!df$containsZero & 
+                        !df$contains1 & 
+                        !df$contains2 &
+                        !df$contains4)))
+```
+
+```{r}
+df$contains5 <- rep(FALSE, 2000)
+df$contains5[5] <- TRUE
+df$contains5[as.numeric(df$connections[5][[1]])] <- TRUE
+
+for(k in 1:2000){ #run many times
+  for(i in 2:2000){
+    if(df$contains5[i]){
+      these_connections <- as.numeric(df$connections[i][[1]])
+      n <- length(these_connections)
+      
+      for(j in 1:n){
+        df$contains5[these_connections[j]] <- TRUE
+      }
+    }
+    cluster_size <- sum(df$contains5)
+  }
+}
+print(paste("There are", 
+            cluster_size, 
+            "nodes that communicate with Program",
+            df$ID[5]))
+print(paste("The next cluster has node",
+            which.max(!df$containsZero & 
+                        !df$contains1 & 
+                        !df$contains2 &
+                        !df$contains4 &
+                        !df$contains5)))
+```
+
+```{r}
+df$contains6 <- rep(FALSE, 2000)
+df$contains6[6] <- TRUE
+df$contains6[as.numeric(df$connections[6][[1]])] <- TRUE
+
+for(k in 1:2000){ #run many times
+  for(i in 2:2000){
+    if(df$contains6[i]){
+      these_connections <- as.numeric(df$connections[i][[1]])
+      n <- length(these_connections)
+      
+      for(j in 1:n){
+        df$contains6[these_connections[j]] <- TRUE
+      }
+    }
+    cluster_size <- sum(df$contains6)
+  }
+}
+print(paste("There are", 
+            cluster_size, 
+            "nodes that communicate with Program",
+            df$ID[6]))
+print(paste("The next cluster has node",
+            which.max(!df$containsZero & 
+                        !df$contains1 & 
+                        !df$contains2 &
+                        !df$contains4 &
+                        !df$contains5 &
+                        !df$contains6)))
+```
+
+---
+
+```{r}
+ID <- 1:2000
+connections <- rep(NA, 2000)
+contains_node <- rep(-99, 2000)
+df <- data.frame(ID, connections, contains_node)
+this_center <- 0
+df$contains_node[2000] <- this_center
+df$connections[2000] <- 795
+df$contains_node[795] <- this_center
+
+for(i in 2:2000){
+  instruction_split <- str_split(puzzle_input[i], " <-> ")[[1]]
+  this_node <- as.numeric(instruction_split[1])
+  these_connections <- list(str_split(instruction_split[2], ", ")[[1]])
+  df$connections[this_node] <- these_connections
+}
+```
+
+```{r}
+for(c in 1:1500){
+  for(k in 1:500){ #run many times
+    for(i in 1:1999){
+      if(df$contains_node[i] == this_center){
+        these_connections <- as.numeric(df$connections[i][[1]])
+        n <- length(these_connections)
+        
+        for(j in 1:n){
+          df$contains_node[these_connections[j]] <- this_center
+        }
+      }
+    }
+  }
+  this_center <- which.max(df$contains_node < 0)
+  df$contains_node[this_center] <- this_center
+}
+print(paste("There are", length(unique(df$contains_node)), "clusters"))
+# 189 was the correct answer!
+```
+
