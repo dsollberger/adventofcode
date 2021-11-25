@@ -1,0 +1,175 @@
+---
+title: "Day 19"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 19: A Series of Tubes ---
+
+Somehow, a network packet got lost and ended up here. It's trying to follow a routing diagram (your puzzle input), but it's confused about where to go.
+
+Its starting point is just off the top of the diagram. Lines (drawn with |, -, and +) show the path it needs to take, starting by going down onto the only line connected to the top of the diagram. It needs to follow this path until it reaches the end (located somewhere within the diagram) and stop there.
+
+Sometimes, the lines cross over each other; in these cases, it needs to continue going the same direction, and only turn left or right when there's no other option. In addition, someone has left letters on the line; these also don't change its direction, but it can use them to keep track of where it's been. For example:
+
+     |          
+     |  +--+    
+     A  |  C    
+ F---|----E|--+ 
+     |  |  |  D 
+     +B-+  +--+ 
+
+Given this diagram, the packet needs to take the following path:
+
+    Starting at the only line touching the top of the diagram, it must go down, pass through A, and continue onward to the first +.
+    Travel right, up, and right, passing through B in the process.
+    Continue down (collecting C), right, and up (collecting D).
+    Finally, go all the way left through E and stopping at F.
+
+Following the path to the end, the letters it sees on its path are ABCDEF.
+
+The little packet looks up at you, hoping you can help it find the way. What letters will it see (in the order it would see them) if it follows the path? (The routing diagram is very wide; make sure you view it without line wrapping.)
+
+```{r}
+initial_maze <- readLines("20171219input.txt")
+example_maze <- readLines("20171219example.txt")
+```
+
+```{r}
+example_matrix <- matrix(rep(" ", 7*16), nrow = 7, ncol = 16)
+for(i in 1:6){
+  this_row <- str_split(example_maze[i], "")[[1]]
+  for(j in 1:16){
+    example_matrix[i,j] <- this_row[j]
+  }
+}
+```
+
+```{r}
+compass <- "down"
+current_char <- "|"
+M <- example_matrix
+num_steps <- 0
+x <- which.max(M[1,] == "|")
+y <- 1
+
+while(current_char != "F"){
+  # print(paste("x:", x, "y:", y))
+  current_char <- M[y,x]
+  if(current_char %in% LETTERS){
+    print(current_char)
+  }
+  M[y,x] <- " " #erase current spot
+  
+  # turn
+  if(current_char == "+"){
+    if(M[y-1,x] == "|" | M[y-1,x] %in% LETTERS | M[y-1,x] == "+"){
+      compass <- "up"
+    }
+    if(M[y+1,x] == "|" | M[y+1,x] %in% LETTERS | M[y+1,x] == "+"){
+      compass <- "down"
+    }
+    if(M[y,x-1] == "-" | M[y,x-1] %in% LETTERS | M[y,x-1] == "+"){
+      compass <- "left"
+    }
+    if(M[y,x+1] == "-" | M[y,x+1] %in% LETTERS | M[y,x+1] == "+"){
+      compass <- "right"
+    }
+  }
+  
+  if(compass == "down"){ y <- y + 1}
+  if(compass == "right"){x <- x + 1}
+  if(compass == "left"){ x <- x - 1}
+  if(compass == "up"){   y <- y - 1}
+  num_steps <- num_steps + 1
+}
+print(paste("We took", num_steps, "steps"))
+```
+```{r}
+puzzle_matrix <- matrix(rep(" ", 201*201), nrow = 201, ncol = 201)
+for(i in 1:200){
+  this_row <- str_split(initial_maze[i], "")[[1]]
+  for(j in 1:200){
+    puzzle_matrix[i,j] <- this_row[j]
+  }
+}
+```
+
+```{r}
+t1 <- proc.time()
+compass <- "down"
+current_char <- "|"
+M <- puzzle_matrix
+num_steps <- 0
+x <- which.max(M[1,] == "|")
+y <- 1
+
+while(current_char != "Z"){
+  # print(paste("x:", x, "y:", y))
+  current_char <- M[y,x]
+  if(current_char %in% LETTERS){
+    print(current_char)
+  }
+  M[y,x] <- " " #erase current spot
+  
+  # turn
+  if(current_char == "+"){
+    if(M[y-1,x] == "|" | M[y-1,x] %in% LETTERS | M[y-1,x] == "+"){
+      compass <- "up"
+    }
+    if(M[y+1,x] == "|" | M[y+1,x] %in% LETTERS | M[y+1,x] == "+"){
+      compass <- "down"
+    }
+    if(M[y,x-1] == "-" | M[y,x-1] %in% LETTERS | M[y,x-1] == "+"){
+      compass <- "left"
+    }
+    if(M[y,x+1] == "-" | M[y,x+1] %in% LETTERS | M[y,x+1] == "+"){
+      compass <- "right"
+    }
+  }
+  
+  if(compass == "down"){ y <- y + 1}
+  if(compass == "right"){x <- x + 1}
+  if(compass == "left"){ x <- x - 1}
+  if(compass == "up"){   y <- y - 1}
+  num_steps <- num_steps + 1
+}
+# HATBMQJYZ was the correct answer
+print(paste("We took", num_steps, "steps"))
+t2 <- proc.time()
+t2 - t1
+```
+
+--- Part Two ---
+
+The packet is curious how many steps it needs to go.
+
+For example, using the same routing diagram from the example above...
+
+     |          
+     |  +--+    
+     A  |  C    
+ F---|--|-E---+ 
+     |  |  |  D 
+     +B-+  +--+ 
+
+...the packet would go:
+
+    6 steps down (including the first line at the top of the diagram).
+    3 steps right.
+    4 steps up.
+    3 steps right.
+    4 steps down.
+    3 steps right.
+    2 steps up.
+    13 steps left (including the F it stops on).
+
+This would result in a total of 38 steps.
+
+How many steps does the packet need to go?

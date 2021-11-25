@@ -1,0 +1,775 @@
+---
+title: "Day 23"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 23: Coprocessor Conflagration ---
+
+You decide to head directly to the CPU and fix the printer from there. As you get close, you find an experimental coprocessor doing so much work that the local programs are afraid it will halt and catch fire. This would cause serious issues for the rest of the computer, so you head in and see what you can do.
+
+The code it's running seems to be a variant of the kind you saw recently on that tablet. The general functionality seems very similar, but some of the instructions are different:
+
+    set X Y sets register X to the value of Y.
+    sub X Y decreases register X by the value of Y.
+    mul X Y sets register X to the result of multiplying the value contained in register X by the value of Y.
+    jnz X Y jumps with an offset of the value of Y, but only if the value of X is not zero. (An offset of 2 skips the next instruction, an offset of -1 jumps to the previous instruction, and so on.)
+
+    Only the instructions listed above are used. The eight registers here, named a through h, all start at 0.
+
+The coprocessor is currently set to some kind of debug mode, which allows for testing, but prevents it from doing any meaningful work.
+
+If you run the program (your puzzle input), how many times is the mul instruction invoked?
+
+
+```{r}
+t1 <- proc.time()
+a <- 0
+b <- 0
+c <- 0
+d <- 0
+e <- 0
+f <- 0
+g <- 0
+h <- 0
+curr_step <- 1
+iter <- 1
+num_mult <- 0
+
+while(curr_step > 0 & curr_step <= 32 & iter < 1e3){
+  # set b 99
+  if(curr_step == 1){
+    b <- b + 99
+    curr_step <- curr_step + 1
+  }
+  
+  # set c b
+  if(curr_step == 2){
+    c <- c + b
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz a 2
+  if(curr_step == 3){
+    if(a != 0){
+      curr_step <- curr_step + 2
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # jnz 1 5
+  if(curr_step == 4){
+    if(1){
+      curr_step <- curr_step + 5
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # mul b 100
+  if(curr_step == 5){
+    b <- b * 100
+    num_mult <- num_mult + 1
+    curr_step <- curr_step + 1
+  }
+  
+  # sub b -100000
+  if(curr_step == 6){
+    b <- b + 100000
+    curr_step <- curr_step + 1
+  }
+  
+  # set c b
+  if(curr_step == 7){
+    c <- c + b
+    curr_step <- curr_step + 1
+  }
+  
+  # sub c -17000
+  if(curr_step == 8){
+    b <- b + 17000
+    curr_step <- curr_step + 1
+  }
+  
+  # set f 1
+  if(curr_step == 9){
+    f <- 1
+    curr_step <- curr_step + 1
+  }
+  
+  # set d 2
+  if(curr_step == 10){
+    d <- 2
+    curr_step <- curr_step + 1
+  }
+  
+  # set e 2
+  if(curr_step == 11){
+    e <- 2
+    curr_step <- curr_step + 1
+  }
+  
+  # set g d
+  if(curr_step == 12){
+    g <- d
+    curr_step <- curr_step + 1
+  }
+  
+  # mul g e
+  if(curr_step == 13){
+    g <- g * e
+    num_mult <- num_mult + 1
+    curr_step <- curr_step + 1
+  }
+  
+  # sub g b
+  if(curr_step == 14){
+    g <- g - b
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz g 2
+  if(curr_step == 15){
+    if(g != 0){
+      curr_step <- curr_step + 2
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # set f 0
+  if(curr_step == 16){
+    f <- 0
+    curr_step <- curr_step + 1
+  }
+  
+  # sub e -1
+  if(curr_step == 17){
+    e <- e + 1
+    curr_step <- curr_step + 1
+  }
+  
+  # set g e
+  if(curr_step == 18){
+    g <- e
+    curr_step <- curr_step + 1
+  }
+  
+  # sub g b
+  if(curr_step == 19){
+    g <- g - b
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz g -8
+  if(curr_step == 20){
+    if(g != 0){
+      curr_step <- curr_step - 8
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # sub d -1
+  if(curr_step == 21){
+    d <- d + 1
+    curr_step <- curr_step + 1
+  }
+  
+  # set g d
+  if(curr_step == 22){
+    g <- d
+    curr_step <- curr_step + 1
+  }
+  
+  # sub g b
+  if(curr_step == 23){
+    g <- g - b
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz g -13
+  if(curr_step == 24){
+    if(g != 0){
+      curr_step <- curr_step - 13
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # jnz f 2
+  if(curr_step == 25){
+    if(f != 0){
+      curr_step <- curr_step + 2
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # sub h -1
+  if(curr_step == 26){
+    h <- h + 1
+    curr_step <- curr_step + 1
+  }
+  
+  # set g b
+  if(curr_step == 27){
+    g <- b
+    curr_step <- curr_step + 1
+  }
+  
+  # sub g c
+  if(curr_step == 28){
+    g <- g - c
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz g 2
+  if(curr_step == 29){
+    if(g != 0){
+      curr_step <- curr_step + 2
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # jnz 1 3
+  if(curr_step == 30){
+    if(1){
+      curr_step <- curr_step + 3
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # sub b -17
+  if(curr_step == 31){
+    b <- b + 17
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz 1 -23
+  if(curr_step == 32){
+    if(1){
+      curr_step <- curr_step - 23
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+}
+
+
+print(paste("We multiplied", num_mult, "times"))
+t2 <- proc.time()
+t2 - t1
+# 9409 was the correct answer
+```
+
+```{r}
+t1 <- proc.time()
+a <- 1
+b <- 0
+c <- 0
+d <- 0
+e <- 0
+f <- 0
+g <- 0
+h <- 0
+curr_step <- 1
+iter <- 1
+num_mult <- 0
+
+while(curr_step > 0 & curr_step <= 32 & iter < 1e6){
+  # set b 99
+  if(curr_step == 1){
+    b <- b + 99
+    curr_step <- curr_step + 1
+  }
+  
+  # set c b
+  if(curr_step == 2){
+    c <- b
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz a 2
+  if(curr_step == 3){
+    if(a != 0){
+      curr_step <- curr_step + 2
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # jnz 1 5
+  if(curr_step == 4){
+    if(1){
+      curr_step <- curr_step + 5
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # mul b 100
+  if(curr_step == 5){
+    b <- b * 100
+    num_mult <- num_mult + 1
+    curr_step <- curr_step + 1
+  }
+  
+  # sub b -100000
+  if(curr_step == 6){
+    b <- b + 100000
+    curr_step <- curr_step + 1
+  }
+  
+  # set c b
+  if(curr_step == 7){
+    c <- b
+    curr_step <- curr_step + 1
+  }
+  
+  # sub c -17000
+  if(curr_step == 8){
+    c <- c + 17000
+    curr_step <- curr_step + 1
+  }
+  
+  # set f 1
+  if(curr_step == 9){
+    f <- 1
+    curr_step <- curr_step + 1
+  }
+  
+  # set d 2
+  if(curr_step == 10){
+    d <- 2
+    curr_step <- curr_step + 1
+  }
+  
+  # set e 2
+  if(curr_step == 11){
+    e <- 2
+    curr_step <- curr_step + 1
+  }
+  
+  # set g d
+  if(curr_step == 12){
+    g <- d
+    curr_step <- curr_step + 1
+  }
+  
+  # mul g e
+  if(curr_step == 13){
+    g <- g * e
+    num_mult <- num_mult + 1
+    curr_step <- curr_step + 1
+  }
+  
+  # sub g b
+  if(curr_step == 14){
+    g <- g - b
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz g 2
+  if(curr_step == 15){
+    if(g != 0){
+      curr_step <- curr_step + 2
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # set f 0
+  if(curr_step == 16){
+    f <- 0
+    curr_step <- curr_step + 1
+  }
+  
+  # sub e -1
+  if(curr_step == 17){
+    e <- e + 1
+    curr_step <- curr_step + 1
+  }
+  
+  # set g e
+  if(curr_step == 18){
+    g <- e
+    curr_step <- curr_step + 1
+  }
+  
+  # sub g b
+  if(curr_step == 19){
+    g <- g - b
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz g -8
+  if(curr_step == 20){
+    if(g != 0){
+      curr_step <- curr_step - 8
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # sub d -1
+  if(curr_step == 21){
+    d <- d + 1
+    curr_step <- curr_step + 1
+  }
+  
+  # set g d
+  if(curr_step == 22){
+    g <- d
+    curr_step <- curr_step + 1
+  }
+  
+  # sub g b
+  if(curr_step == 23){
+    g <- g - b
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz g -13
+  if(curr_step == 24){
+    if(g != 0){
+      curr_step <- curr_step - 13
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # jnz f 2
+  if(curr_step == 25){
+    if(f != 0){
+      curr_step <- curr_step + 2
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # sub h -1
+  if(curr_step == 26){
+    h <- h + 1
+    curr_step <- curr_step + 1
+  }
+  
+  # set g b
+  if(curr_step == 27){
+    g <- b
+    curr_step <- curr_step + 1
+  }
+  
+  # sub g c
+  if(curr_step == 28){
+    g <- g - c
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz g 2
+  if(curr_step == 29){
+    if(g != 0){
+      curr_step <- curr_step + 2
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # jnz 1 3
+  if(curr_step == 30){
+    if(1){
+      curr_step <- curr_step + 3
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # sub b -17
+  if(curr_step == 31){
+    b <- b + 17
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz 1 -23
+  if(curr_step == 32){
+    if(1){
+      curr_step <- curr_step - 23
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  iter <- iter + 1
+}
+
+
+print(paste("h:", h))
+t2 <- proc.time()
+t2 - t1
+# No, h is not zero
+```
+
+```{r}
+t1 <- proc.time()
+N <- 10
+a <- 1
+h <- 0
+b_vec <- rep(NA, N)
+c_vec <- rep(NA, N)
+d_vec <- rep(NA, N)
+e_vec <- rep(NA, N)
+f_vec <- rep(NA, N)
+g_vec <- rep(NA, N)
+h_vec <- rep(NA, N)
+curr_step <- 1
+iter <- 1
+num_mult <- 0
+
+while(curr_step > 0 & curr_step <= 32 & iter <= N){
+  # set b 99
+  if(curr_step == 1){
+    b <- b + 99
+    curr_step <- curr_step + 1
+  }
+  
+  # set c b
+  if(curr_step == 2){
+    c <- b
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz a 2
+  if(curr_step == 3){
+    if(a != 0){
+      curr_step <- curr_step + 2
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # jnz 1 5
+  if(curr_step == 4){
+    if(1){
+      curr_step <- curr_step + 5
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # mul b 100
+  if(curr_step == 5){
+    b <- b * 100
+    num_mult <- num_mult + 1
+    curr_step <- curr_step + 1
+  }
+  
+  # sub b -100000
+  if(curr_step == 6){
+    b <- b + 100000
+    curr_step <- curr_step + 1
+  }
+  
+  # set c b
+  if(curr_step == 7){
+    c <- b
+    curr_step <- curr_step + 1
+  }
+  
+  # sub c -17000
+  if(curr_step == 8){
+    c <- c + 17000
+    curr_step <- curr_step + 1
+  }
+  
+  # set f 1
+  if(curr_step == 9){
+    f <- 1
+    curr_step <- curr_step + 1
+  }
+  
+  # set d 2
+  if(curr_step == 10){
+    d <- 2
+    curr_step <- curr_step + 1
+  }
+  
+  # set e 2
+  if(curr_step == 11){
+    e <- 2
+    curr_step <- curr_step + 1
+  }
+  
+  # set g d
+  if(curr_step == 12){
+    g <- d
+    curr_step <- curr_step + 1
+  }
+  
+  # mul g e
+  if(curr_step == 13){
+    g <- g * e
+    num_mult <- num_mult + 1
+    curr_step <- curr_step + 1
+  }
+  
+  # sub g b
+  if(curr_step == 14){
+    g <- g - b
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz g 2
+  if(curr_step == 15){
+    if(g != 0){
+      curr_step <- curr_step + 2
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # set f 0
+  if(curr_step == 16){
+    f <- 0
+    curr_step <- curr_step + 1
+  }
+  
+  # sub e -1
+  if(curr_step == 17){
+    e <- e + 1
+    curr_step <- curr_step + 1
+  }
+  
+  # set g e
+  if(curr_step == 18){
+    g <- e
+    curr_step <- curr_step + 1
+  }
+  
+  # sub g b
+  if(curr_step == 19){
+    g <- g - b
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz g -8
+  if(curr_step == 20){
+    if(g != 0){
+      curr_step <- curr_step - 8
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # sub d -1
+  if(curr_step == 21){
+    d <- d + 1
+    curr_step <- curr_step + 1
+  }
+  
+  # set g d
+  if(curr_step == 22){
+    g <- d
+    curr_step <- curr_step + 1
+  }
+  
+  # sub g b
+  if(curr_step == 23){
+    g <- g - b
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz g -13
+  if(curr_step == 24){
+    if(g != 0){
+      curr_step <- curr_step - 13
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # jnz f 2
+  if(curr_step == 25){
+    if(f != 0){
+      curr_step <- curr_step + 2
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # sub h -1
+  if(curr_step == 26){
+    h <- h + 1
+    curr_step <- curr_step + 1
+  }
+  
+  # set g b
+  if(curr_step == 27){
+    g <- b
+    curr_step <- curr_step + 1
+  }
+  
+  # sub g c
+  if(curr_step == 28){
+    g <- g - c
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz g 2
+  if(curr_step == 29){
+    if(g != 0){
+      curr_step <- curr_step + 2
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # jnz 1 3
+  if(curr_step == 30){
+    if(1){
+      curr_step <- curr_step + 3
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  # sub b -17
+  if(curr_step == 31){
+    b <- b + 17
+    curr_step <- curr_step + 1
+  }
+  
+  # jnz 1 -23
+  if(curr_step == 32){
+    if(1){
+      curr_step <- curr_step - 23
+    }else{
+      curr_step <- curr_step + 1
+    }
+  }
+  
+  b_vec[iter] <- b
+  c_vec[iter] <- c
+  d_vec[iter] <- d
+  e_vec[iter] <- e
+  f_vec[iter] <- f
+  g_vec[iter] <- g
+  h_vec[iter] <- h
+  
+  iter <- iter + 1
+}
+
+
+print(paste("h:", h))
+t2 <- proc.time()
+t2 - t1
+# 1110099897 + 1110116900 = 2220216797 was too high
+```
