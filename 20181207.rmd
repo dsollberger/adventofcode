@@ -1,0 +1,232 @@
+---
+title: "Day 7"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 7: The Sum of Its Parts ---
+
+You find yourself standing on a snow-covered coastline; apparently, you landed a little off course. The region is too hilly to see the North Pole from here, but you do spot some Elves that seem to be trying to unpack something that washed ashore. It's quite cold out, so you decide to risk creating a paradox by asking them for directions.
+
+"Oh, are you the search party?" Somehow, you can understand whatever Elves from the year 1018 speak; you assume it's Ancient Nordic Elvish. Could the device on your wrist also be a translator? "Those clothes don't look very warm; take this." They hand you a heavy coat.
+
+"We do need to find our way back to the North Pole, but we have higher priorities at the moment. You see, believe it or not, this box contains something that will solve all of Santa's transportation problems - at least, that's what it looks like from the pictures in the instructions." It doesn't seem like they can read whatever language it's in, but you can: "Sleigh kit. Some assembly required."
+
+"'Sleigh'? What a wonderful name! You must help us assemble this 'sleigh' at once!" They start excitedly pulling more parts out of the box.
+
+The instructions specify a series of steps and requirements about which steps must be finished before others can begin (your puzzle input). Each step is designated by a single letter. For example, suppose you have the following instructions:
+
+Step C must be finished before step A can begin.
+Step C must be finished before step F can begin.
+Step A must be finished before step B can begin.
+Step A must be finished before step D can begin.
+Step B must be finished before step E can begin.
+Step D must be finished before step E can begin.
+Step F must be finished before step E can begin.
+
+Visually, these requirements look like this:
+
+  -->A--->B--
+ /    \      \
+C      -->D----->E
+ \           /
+  ---->F-----
+
+Your first goal is to determine the order in which the steps should be completed. If more than one step is ready, choose the step which is first alphabetically. In this example, the steps would be completed as follows:
+
+    Only C is available, and so it is done first.
+    Next, both A and F are available. A is first alphabetically, so it is done next.
+    Then, even though F was available earlier, steps B and D are now also available, and B is the first alphabetically of the three.
+    After that, only D and F are available. E is not available because only some of its prerequisites are complete. Therefore, D is completed next.
+    F is the only choice, so it is done next.
+    Finally, E is completed.
+
+So, in this example, the correct order is CABDFE.
+
+In what order should the steps in your instructions be completed?
+
+```{r, warning = FALSE}
+t1 <- proc.time()
+puzzle_input <- readLines("20181207input.txt")
+# puzzle_input <- readLines("20181207example.txt")
+N <- length(puzzle_input)
+
+before <- rep(NA, N)
+after <- rep(NA, N)
+df <- data.frame(before, after)
+for(i in 1:N){
+  this_split <- str_split(puzzle_input[i],
+                          " must be finished before step ")[[1]]
+  df$before[i] <- str_sub(this_split[1], -1)
+  df$after[i]  <- str_sub(this_split[2], 1, 1)
+}
+
+# df <- df %>%
+#   filter(before != "Q" & after != "Q")
+# N <- nrow(df)
+
+# previous_list <- unique(c(df$before, df$after))
+# for(k in 1:1000){
+#   next_list <- previous_list
+#   for(i in 1:N){
+#     loc1 <- which.max(previous_list == df$before[i])
+#     loc2 <- which.max(previous_list == df$after[i])
+#     if(loc1 > loc2){
+#       next_list[loc2] <- previous_list[loc1]
+#       next_list[loc1] <- previous_list[loc2]
+#     }
+#   }
+#   previous_list <- next_list
+# }
+# print(paste("Our unscrambled network order is",
+#             paste0(previous_list, collapse = "")))
+# t2 <- proc.time()
+# t2 - t1
+# QZWCOKPXNFUMJBSAELDYIGVRHT was incorrect
+```
+```{r}
+# after_bubble <- previous_list
+# piece1 <- sort(after_bubble[1:4])
+# piece2 <- sort(after_bubble[5:6])
+# piece3 <- sort(after_bubble[7])
+# piece4 <- sort(after_bubble[8:13])
+# piece5 <- sort(after_bubble[14:16])
+# piece6 <- sort(after_bubble[17])
+# piece7 <- sort(after_bubble[18:19])
+# piece8 <- after_bubble[20:26] #do not sort
+# puzzle_answer <- paste0(c(piece1, piece2, piece3, piece4, 
+#                    piece5, piece6, piece7, piece8), collapse = "")
+# print(paste("Our unscrambled network order is", puzzle_answer))
+# CQWZKOPFJMNUXABSEDLYIGVRHT was incorrect
+```
+```{r}
+puzzle_answer <- rep(NA, 26)
+df2 <- df
+for(i in 26:5){
+  endpoint <- setdiff(df2$after, df2$before)
+  n <- length(endpoint)
+  endpoint <- sort(endpoint)
+  puzzle_answer[i] <- endpoint[n]
+  df2 <- df2 %>% filter(after != endpoint[n])
+}
+# CQWZ and OPXKNFJBSEUMDAYILGVRHT make
+# CQWZOPXKNFJBSEUMDAYILGVRHT, which was still incorrect
+
+# CQWZ and FOPUXAJKBMNSDEYILGVRHT make
+# CQWZFOPUXAJKBMNSDEYILGVRHT, which was still incorrect
+```
+
+```{r}
+puzzle_answer <- rep(NA, 26)
+df2 <- df
+for(i in 1:25){
+  current_subset <- setdiff(df2$before, df2$after)
+  this_letter <- sort(current_subset)[1]
+  puzzle_answer[i] <- this_letter
+  df2 <- df2 %>% filter(before != this_letter)
+}
+print(paste("The puzzle answer is", 
+            paste0(puzzle_answer, collapse = "")))
+# CQSWKZFJONPBEUMXADLYIGVRH and T make
+# CQSWKZFJONPBEUMXADLYIGVRHT was the correct answer
+```
+
+--- Part Two ---
+
+As you're about to begin construction, four of the Elves offer to help. "The sun will set soon; it'll go faster if we work together." Now, you need to account for multiple people working on steps simultaneously. If multiple steps are available, workers should still begin them in alphabetical order.
+
+Each step takes 60 seconds plus an amount corresponding to its letter: A=1, B=2, C=3, and so on. So, step A takes 60+1=61 seconds, while step Z takes 60+26=86 seconds. No time is required between steps.
+
+To simplify things for the example, however, suppose you only have help from one Elf (a total of two workers) and that each step takes 60 fewer seconds (so that step A takes 1 second and step Z takes 26 seconds). Then, using the same instructions as above, this is how each second would be spent:
+
+Second   Worker 1   Worker 2   Done
+   0        C          .        
+   1        C          .        
+   2        C          .        
+   3        A          F       C
+   4        B          F       CA
+   5        B          F       CA
+   6        D          F       CAB
+   7        D          F       CAB
+   8        D          F       CAB
+   9        D          .       CABF
+  10        E          .       CABFD
+  11        E          .       CABFD
+  12        E          .       CABFD
+  13        E          .       CABFD
+  14        E          .       CABFD
+  15        .          .       CABFDE
+
+Each row represents one second of time. The Second column identifies how many seconds have passed as of the beginning of that second. Each worker column shows the step that worker is currently doing (or . if they are idle). The Done column shows completed steps.
+
+Note that the order of the steps has changed; this is because steps now take time to finish and multiple workers can begin multiple steps simultaneously.
+
+In this example, it would take 15 seconds for two workers to complete these steps.
+
+With 5 workers and the 60+ second step durations described above, how long will it take to complete all of the steps?
+
+```{r}
+M <- matrix(rep(NA, 850*5), ncol = 5)
+colnames(M) <- c("W1", "W2", "W3", "W4", "W5")
+# C W1 0:63
+M[1:63, 1] <- "C"
+# Q W2 0:77
+M[1:77, 2] <- "Q"
+# S w1 78:157
+M[78:157, 1] <- "S"
+# W W3 0:83
+M[1:83, 3] <- "W"
+# K W2 84:155
+M[84:155, 2] <- "K"
+# Z W4 0:86
+M[1:86, 4] <- "Z"
+# F W3 87:153
+M[87:153, 3] <- "F"
+# J W4 87:157
+M[87:157, 4] <- "J"
+# O W5 87:162
+M[87:162, 5] <- "O"
+# N W1 163:237
+M[163:237, 1] <- "N"
+# P W2 163:239
+M[163:239, 2] <- "P"
+# B W1 240:302
+M[158:220, 4] <- "B"
+# E W1 303:365
+M[221:286, 4] <- "E"
+# U w3 
+M[154:235, 3] <- "U"
+# M
+M[236:309] <- "M"
+# X
+M[240:324, 2] <- "X"
+# A
+M[325:386, 2] <- "A"
+# D
+M[310:374, 1] <- "D"
+# L
+M[387:452, 2] <- "L"
+# Y
+M[310:395, 3] <- "Y"
+# I
+M[387:449, 1] <- "I"
+# G
+M[453:520, 1] <- "G"
+# V
+M[521:603, 1] <- "V"
+# R
+M[603:682, 1] <- "R"
+# H
+M[683:751, 1] <- "H"
+# T
+M[752:832, 1] <- "T"
+
+# 832 was too low??
+```
+

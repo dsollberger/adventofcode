@@ -1,0 +1,125 @@
+---
+title: "Day 5"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 5: Alchemical Reduction ---
+
+You've managed to sneak in to the prototype suit manufacturing lab. The Elves are making decent progress, but are still struggling with the suit's size reduction capabilities.
+
+While the very latest in 1518 alchemical technology might have solved their problem eventually, you can do better. You scan the chemical composition of the suit's material and discover that it is formed by extremely long polymers (one of which is available as your puzzle input).
+
+The polymer is formed by smaller units which, when triggered, react with each other such that two adjacent units of the same type and opposite polarity are destroyed. Units' types are represented by letters; units' polarity is represented by capitalization. For instance, r and R are units with the same type but opposite polarity, whereas r and s are entirely different types and do not react.
+
+For example:
+
+    In aA, a and A react, leaving nothing behind.
+    In abBA, bB destroys itself, leaving aA. As above, this then destroys itself, leaving nothing.
+    In abAB, no two adjacent units are of the same type, and so nothing happens.
+    In aabAAB, even though aa and AA are of the same type, their polarities match, and so nothing happens.
+
+Now, consider a larger example, dabAcCaCBAcCcaDA:
+
+dabAcCaCBAcCcaDA  The first 'cC' is removed.
+dabAaCBAcCcaDA    This creates 'Aa', which is removed.
+dabCBAcCcaDA      Either 'cC' or 'Cc' are removed (the result is the same).
+dabCBAcaDA        No further actions can be taken.
+
+After all possible reactions, the resulting polymer contains 10 units.
+
+How many units remain after fully reacting the polymer you scanned? (Note: in this puzzle and others, the input is large; if you copy/paste your input, make sure you get the whole thing.)
+
+```{r, warning = FALSE}
+t1 <- proc.time()
+puzzle_input <- readLines("20181205input.txt")
+# puzzle_input <- "dabAcCaCBAcCcaDA" #example 2
+current_string <- str_split(puzzle_input, "")[[1]]
+N <- length(current_string)
+iter <- 1
+
+while(iter < N){
+  n <- length(current_string)
+  for(i in 2:(n-1)){
+    this_letter <- current_string[i]
+    next_letter <- current_string[i+1]
+    next_string <- current_string
+    
+    if(this_letter %in% letters){
+      if(toupper(this_letter) == next_letter){
+        next_string <- c(current_string[1:(i-1)],
+                         current_string[(i+2):n])
+        break
+      }
+    }
+    
+    if(this_letter %in% LETTERS){
+      if(tolower(this_letter) == next_letter){
+        next_string <- c(current_string[1:(i-1)],
+                         current_string[(i+2):n])
+        break
+      }
+    }
+  }
+  
+  current_string <- next_string
+  n_next <- length(next_string)
+  if(n_next == n){
+    break
+  }
+  iter <- iter + 1
+}
+print(paste("After the reactions, the polymer has",
+            length(current_string), "units"))
+t2 <- proc.time()
+t2 - t1
+# 49971 was too high
+# 9687 was too high
+```
+
+```{r}
+writeLines(paste0(current_string, collapse = ""), "20181205output.txt")
+# code somehow added a newline at end of file, so had to subtract to get 9686
+part1_string <- str_sub(str_trim(paste0(current_string, collapse = "")), 3)
+```
+
+```{r}
+t1 <- proc.time()
+best_length <- str_length(part1_string)
+for(i in 1:26){
+  next_line <- part1_string
+  # next_line <- puzzle_input
+  next_line <- str_replace_all(next_line, letters[i], "")
+  next_line <- str_replace_all(next_line, LETTERS[i], "")
+  previous_line <- "1337"
+  while(previous_line != next_line){
+    previous_line <- next_line
+    for(j in 1:26){
+      PAIRpair <- paste0(LETTERS[j], letters[j])
+      pairPAIR <- paste0(letters[j], LETTERS[j])
+      next_line <- str_replace_all(next_line, PAIRpair, "")
+      next_line <- str_replace_all(next_line, pairPAIR, "")
+    }
+  }
+  
+  print(this_length)
+  this_length <- str_length(next_line)
+  if(this_length < best_length){
+    best_length <- this_length
+  }
+}
+print(paste("Part 2 answer:", best_length))
+t2 <- proc.time()
+t2 - t1
+# 9682 was too high
+# 9457 was too high
+# 5524 was the correct answer!
+```
+
+
