@@ -1,0 +1,301 @@
+---
+title: "Day 18"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 18: Settlers of The North Pole ---
+
+On the outskirts of the North Pole base construction project, many Elves are collecting lumber.
+
+The lumber collection area is 50 acres by 50 acres; each acre can be either open ground (.), trees (|), or a lumberyard (#). You take a scan of the area (your puzzle input).
+
+Strange magic is at work here: each minute, the landscape looks entirely different. In exactly one minute, an open acre can fill with trees, a wooded acre can be converted to a lumberyard, or a lumberyard can be cleared to open ground (the lumber having been sent to other projects).
+
+The change to each acre is based entirely on the contents of that acre as well as the number of open, wooded, or lumberyard acres adjacent to it at the start of each minute. Here, "adjacent" means any of the eight acres surrounding that acre. (Acres on the edges of the lumber collection area might have fewer than eight adjacent acres; the missing acres aren't counted.)
+
+In particular:
+
+    An open acre will become filled with trees if three or more adjacent acres contained trees. Otherwise, nothing happens.
+    An acre filled with trees will become a lumberyard if three or more adjacent acres were lumberyards. Otherwise, nothing happens.
+    An acre containing a lumberyard will remain a lumberyard if it was adjacent to at least one other lumberyard and at least one acre containing trees. Otherwise, it becomes open.
+
+These changes happen across all acres simultaneously, each of them using the state of all acres at the beginning of the minute and changing to their new form by the end of that same minute. Changes that happen during the minute don't affect each other.
+
+For example, suppose the lumber collection area is instead only 10 by 10 acres with this initial configuration:
+
+Initial state:
+.#.#...|#.
+.....#|##|
+.|..|...#.
+..|#.....#
+#.#|||#|#|
+...#.||...
+.|....|...
+||...#|.#|
+|.||||..|.
+...#.|..|.
+
+After 1 minute:
+.......##.
+......|###
+.|..|...#.
+..|#||...#
+..##||.|#|
+...#||||..
+||...|||..
+|||||.||.|
+||||||||||
+....||..|.
+
+After 2 minutes:
+.......#..
+......|#..
+.|.|||....
+..##|||..#
+..###|||#|
+...#|||||.
+|||||||||.
+||||||||||
+||||||||||
+.|||||||||
+
+After 3 minutes:
+.......#..
+....|||#..
+.|.||||...
+..###|||.#
+...##|||#|
+.||##|||||
+||||||||||
+||||||||||
+||||||||||
+||||||||||
+
+After 4 minutes:
+.....|.#..
+...||||#..
+.|.#||||..
+..###||||#
+...###||#|
+|||##|||||
+||||||||||
+||||||||||
+||||||||||
+||||||||||
+
+After 5 minutes:
+....|||#..
+...||||#..
+.|.##||||.
+..####|||#
+.|.###||#|
+|||###||||
+||||||||||
+||||||||||
+||||||||||
+||||||||||
+
+After 6 minutes:
+...||||#..
+...||||#..
+.|.###|||.
+..#.##|||#
+|||#.##|#|
+|||###||||
+||||#|||||
+||||||||||
+||||||||||
+||||||||||
+
+After 7 minutes:
+...||||#..
+..||#|##..
+.|.####||.
+||#..##||#
+||##.##|#|
+|||####|||
+|||###||||
+||||||||||
+||||||||||
+||||||||||
+
+After 8 minutes:
+..||||##..
+..|#####..
+|||#####|.
+||#...##|#
+||##..###|
+||##.###||
+|||####|||
+||||#|||||
+||||||||||
+||||||||||
+
+After 9 minutes:
+..||###...
+.||#####..
+||##...##.
+||#....###
+|##....##|
+||##..###|
+||######||
+|||###||||
+||||||||||
+||||||||||
+
+After 10 minutes:
+.||##.....
+||###.....
+||##......
+|##.....##
+|##.....##
+|##....##|
+||##.####|
+||#####|||
+||||#|||||
+||||||||||
+
+After 10 minutes, there are 37 wooded acres and 31 lumberyards. Multiplying the number of wooded acres by the number of lumberyards gives the total resource value after ten minutes: 37 * 31 = 1147.
+
+What will the total resource value of the lumber collection area be after 10 minutes?
+
+```{r, warning = FALSE}
+t1 <- proc.time()
+puzzle_input <- readLines("20181218input.txt")
+# puzzle_input <- readLines("20181218example.txt")
+M <- length(puzzle_input)
+N <- str_length(puzzle_input[1])
+
+land_mat <- matrix(rep(".", (M+2)*(N+2)), nrow = M + 2, ncol = N + 2)
+for(i in 1:M){
+  land_mat[i+1,2:(N+1)] <- str_split(puzzle_input[i], "")[[1]]
+}
+
+for(t in 1:10){
+  next_mat <- matrix(rep(".", (M+2)*(N+2)), nrow = M + 2, ncol = N + 2)
+  for(i in 2:(M+1)){
+    for(j in 2:(N+1)){
+      neighbors <- c(land_mat[i-1,j-1], land_mat[i-1,j], land_mat[i-1,j+1],
+                     land_mat[i,j-1], land_mat[i,j+1],
+                     land_mat[i+1,j-1], land_mat[i+1,j], land_mat[i+1,j+1])
+      
+      if(land_mat[i,j] == "."){
+        if(sum(neighbors == "|") >= 3){
+          next_mat[i,j] <- "|"
+        }else{
+          next_mat[i,j] <- "."
+        }
+      }
+      if(land_mat[i,j] == "|"){
+        if(sum(neighbors == "#") >= 3){
+          next_mat[i,j] <- "#"
+        }else{
+          next_mat[i,j] <- "|"
+        }
+          
+      }
+      if(land_mat[i,j] == "#"){
+        if(sum(neighbors == "#") >= 1 & sum(neighbors == "|") >= 1){
+          next_mat[i,j] <- "#"
+        }else{
+          next_mat[i,j] <- "."
+        }
+      }
+    }
+  }
+  # print(next_mat)
+  land_mat <- next_mat
+}
+print(paste("Resource value:",
+            sum(land_mat == "|")*sum(land_mat == "#")))
+t2 <- proc.time()
+t2 - t1
+# 620624 was the correct answer
+```
+--- Part Two ---
+
+This important natural resource will need to last for at least thousands of years. Are the Elves collecting this lumber sustainably?
+
+What will the total resource value of the lumber collection area be after 1000000000 minutes?
+
+```{r, warning = FALSE}
+t1 <- proc.time()
+puzzle_input <- readLines("20181218input.txt")
+M <- length(puzzle_input)
+N <- str_length(puzzle_input[1])
+T <- 10000
+RV <- rep(NA, T)
+
+land_mat <- matrix(rep(".", (M+2)*(N+2)), nrow = M + 2, ncol = N + 2)
+for(i in 1:M){
+  land_mat[i+1,2:(N+1)] <- str_split(puzzle_input[i], "")[[1]]
+}
+
+for(t in 1:T){
+  next_mat <- matrix(rep(".", (M+2)*(N+2)), nrow = M + 2, ncol = N + 2)
+  for(i in 2:(M+1)){
+    for(j in 2:(N+1)){
+      neighbors <- c(land_mat[i-1,j-1], land_mat[i-1,j], land_mat[i-1,j+1],
+                     land_mat[i,j-1], land_mat[i,j+1],
+                     land_mat[i+1,j-1], land_mat[i+1,j], land_mat[i+1,j+1])
+      
+      if(land_mat[i,j] == "."){
+        if(sum(neighbors == "|") >= 3){
+          next_mat[i,j] <- "|"
+        }else{
+          next_mat[i,j] <- "."
+        }
+      }
+      if(land_mat[i,j] == "|"){
+        if(sum(neighbors == "#") >= 3){
+          next_mat[i,j] <- "#"
+        }else{
+          next_mat[i,j] <- "|"
+        }
+          
+      }
+      if(land_mat[i,j] == "#"){
+        if(sum(neighbors == "#") >= 1 & sum(neighbors == "|") >= 1){
+          next_mat[i,j] <- "#"
+        }else{
+          next_mat[i,j] <- "."
+        }
+      }
+    }
+  }
+  # print(next_mat)
+  RV[t] <- sum(land_mat == "|")*sum(land_mat == "#")
+  land_mat <- next_mat
+}
+print(paste("Resource value:",
+            sum(land_mat == "|")*sum(land_mat == "#")))
+t2 <- proc.time()
+t2 - t1
+```
+
+```{r}
+# https://stackoverflow.com/questions/45416877/find-repeated-sequences-of-different-numbers
+
+max_seq <- function(x)
+{
+  max_seq_len=0
+  for(i in 1:floor(length(x)/2))
+  {
+   y = split(x, ceiling(seq_along(x)/i))
+   lengths=sapply(y,length)
+   if(length(unique(y[which(lengths==max(lengths))]))==1)
+   {max_seq_len=i}
+  }
+  return(max_seq_len)
+}
+
+max_seq(RV)
+```
+
