@@ -115,28 +115,28 @@ Finally, to find the life support rating, multiply the oxygen generator rating (
 
 Use the binary numbers in your diagnostic report to calculate the oxygen generator rating and CO2 scrubber rating, then multiply them together. What is the life support rating of the submarine? (Be sure to represent your answer in decimal, not binary.)
 
-```{r}
-oxygen_key <- rep(NA, N)
-co2_key <- rep(NA, N)
-
-for(j in 1:N){
-  number_of_ones <- sum(df[,j + 2] == 1)
-  number_of_zeroes <- sum(df[,j + 2] == 0)
-  
-  if(number_of_zeroes == number_of_ones){
-    oxygen_key[j] <- 1
-  }else if(number_of_zeroes > number_of_ones){
-    oxygen_key[j] <- 0
-  }else{
-    oxygen_key[j] <- 1
-  }
-  
-  if(number_of_zeroes > number_of_ones){
-    co2_key[j] <- 1
-  }else{
-    co2_key[j] <- 0
-  }
-}
+```{r, eval = FALSE}
+# oxygen_key <- rep(NA, N)
+# co2_key <- rep(NA, N)
+# 
+# for(j in 1:N){
+#   number_of_ones <- sum(df[,j + 2] == 1)
+#   number_of_zeroes <- sum(df[,j + 2] == 0)
+#   
+#   if(number_of_zeroes == number_of_ones){
+#     oxygen_key[j] <- 1
+#   }else if(number_of_zeroes > number_of_ones){
+#     oxygen_key[j] <- 0
+#   }else{
+#     oxygen_key[j] <- 1
+#   }
+#   
+#   if(number_of_zeroes > number_of_ones){
+#     co2_key[j] <- 1
+#   }else{
+#     co2_key[j] <- 0
+#   }
+# }
 # print(paste("Oxygen key:", oxygen_key))
 # print(paste("CO2 key:", co2_key))
 ```
