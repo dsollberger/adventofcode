@@ -1,0 +1,203 @@
+---
+title: "Day 9"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 9: Smoke Basin ---
+
+These caves seem to be lava tubes. Parts are even still volcanically active; small hydrothermal vents release smoke into the caves that slowly settles like rain.
+
+If you can model how the smoke flows through the caves, you might be able to avoid it and be that much safer. The submarine generates a heightmap of the floor of the nearby caves for you (your puzzle input).
+
+Smoke flows to the lowest point of the area it's in. For example, consider the following heightmap:
+
+2199943210
+3987894921
+9856789892
+8767896789
+9899965678
+
+Each number corresponds to the height of a particular location, where 9 is the highest and 0 is the lowest a location can be.
+
+Your first goal is to find the low points - the locations that are lower than any of its adjacent locations. Most locations have four adjacent locations (up, down, left, and right); locations on the edge or corner of the map have three or two adjacent locations, respectively. (Diagonal locations do not count as adjacent.)
+
+In the above example, there are four low points, all highlighted: two are in the first row (a 1 and a 0), one is in the third row (a 5), and one is in the bottom row (also a 5). All other locations on the heightmap have some lower adjacent location, and so are not low points.
+
+The risk level of a low point is 1 plus its height. In the above example, the risk levels of the low points are 2, 1, 6, and 6. The sum of the risk levels of all low points in the heightmap is therefore 15.
+
+Find all of the low points on your heightmap. What is the sum of the risk levels of all low points on your heightmap?
+
+
+```{r}
+puzzle_input <- readLines("20211209input.txt")
+# puzzle_input <- readLines("20211209example.txt")
+m_before <- length(puzzle_input)
+n_before <- str_length(puzzle_input[1])
+
+# create a matrix, with a buffer around the sides
+# (to avoid out-of-bounds errors)
+M <- matrix(rep(10, (m_before + 2)*(n_before + 2)),
+                  nrow = m_before + 2,
+                  ncol = n_before + 2)
+# fill in middle of matrix
+for(row in 1:m_before){
+  these_numbers <- as.integer(str_split(puzzle_input[row], "")[[1]])
+  M[(row+1),2:(n_before+1)] <- these_numbers
+}
+
+# search the matrix
+total_risk <- 0 #initialization
+for(i in 2:(m_before+1)){ #row tracker
+  for(j in 2:(n_before+1)){ #column tracker
+    #Is it a low point?
+    if(M[i,j] < M[i-1,j]){ #check "up"
+      if(M[i,j] < M[i,j-1]){ #check "left"
+        if(M[i,j] < M[i,j+1]){ #check "right"
+          if(M[i,j] < M[i+1,j]){ #check "down"
+            #add the risk level
+            total_risk <- total_risk + 1 + M[i,j]
+          }
+        }
+      }
+    }
+  }
+}
+print(paste("The total risk level is", total_risk))
+```
+
+--- Part Two ---
+
+Next, you need to find the largest basins so you know what areas are most important to avoid.
+
+A basin is all locations that eventually flow downward to a single low point. Therefore, every low point has a basin, although some basins are very small. Locations of height 9 do not count as being in any basin, and all other locations will always be part of exactly one basin.
+
+The size of a basin is the number of locations within the basin, including the low point. The example above has four basins.
+
+The top-left basin, size 3:
+
+2199943210
+3987894921
+9856789892
+8767896789
+9899965678
+
+The top-right basin, size 9:
+
+2199943210
+3987894921
+9856789892
+8767896789
+9899965678
+
+The middle basin, size 14:
+
+2199943210
+3987894921
+9856789892
+8767896789
+9899965678
+
+The bottom-right basin, size 9:
+
+2199943210
+3987894921
+9856789892
+8767896789
+9899965678
+
+Find the three largest basins and multiply their sizes together. In the above example, this is 9 * 14 * 9 = 1134.
+
+What do you get if you multiply together the sizes of the three largest basins?
+
+```{r, eval = TRUE}
+t1 <- proc.time()
+puzzle_input <- readLines("20211209input.txt")
+# puzzle_input <- readLines("20211209example.txt")
+m_before <- length(puzzle_input)
+n_before <- str_length(puzzle_input[1])
+
+# create a matrix, with a buffer around the sides
+# (to avoid out-of-bounds errors)
+M <- matrix(rep(9, (m_before + 2)*(n_before + 2)),
+                  nrow = m_before + 2,
+                  ncol = n_before + 2)
+# fill in middle of matrix
+for(row in 1:m_before){
+  these_numbers <- as.integer(str_split(puzzle_input[row], "")[[1]])
+  M[(row+1),2:(n_before+1)] <- these_numbers
+}
+
+# create a matrix of Boolean values to help us know
+# which locations were already examined
+M_bool <- matrix(rep(FALSE, (m_before + 2)*(n_before + 2)),
+                  nrow = m_before + 2,
+                  ncol = n_before + 2)
+M_bool[M == 9] <- TRUE
+
+# create a matrix of basin ID numbers to help us know
+# which locations were already examined
+M_ID <- matrix(rep(FALSE, (m_before + 2)*(n_before + 2)),
+                  nrow = m_before + 2,
+                  ncol = n_before + 2)
+M_ID[M == 9] <- 0
+
+basin_search <- function(M, i, j, basin_number){
+  # This function will compute the size of a basin
+  # INPUTS: matrix, row number, column number
+  # OUTPUT: number (via recursion)
+            # print(paste("row:", i))
+            # print(paste("column:", j))
+  # base case (found a boundary)
+  if(M[i,j] == 9){
+    #nothing
+  }else{ #count this location and maybe the other adjacent locations
+    M_bool[i,j] <<- TRUE #GLOBAL ASSIGNMENT OPERATOR
+    M_ID[i,j] <<- basin_number #GLOBAL ASSIGNMENT OPERATOR
+    if(!M_bool[i-1,j]){ #check "up" if not done already
+      M_ID <- basin_search(M,i-1,j, basin_number)
+    }
+    if(!M_bool[i+1,j]){ #check "down" if not done already
+      M_ID <- basin_search(M,i+1,j, basin_number)
+    }
+    if(!M_bool[i,j-1]){ #check "left" if not done already
+      M_ID <- basin_search(M,i,j-1, basin_number)
+    }
+    if(!M_bool[i,j+1]){ #check "right" if not done already
+      M_ID <- basin_search(M,i,j+1, basin_number)
+    }
+  }
+  
+  # return
+  M_ID
+}
+
+# search the matrix
+basin_number <- 0 #initialization
+for(i in 2:(m_before+1)){ #row tracker
+  for(j in 2:(n_before+1)){ #column tracker
+    #Is it a low point?
+    if(M[i,j] < M[i-1,j]){ #check "up"
+      if(M[i,j] < M[i,j-1]){ #check "left"
+        if(M[i,j] < M[i,j+1]){ #check "right"
+          if(M[i,j] < M[i+1,j]){ #check "down"
+            basin_number <- basin_number + 1
+            #Once we find a low point, start labeling locations with basin number
+            basin_search(M, i, j, basin_number)
+          }
+        }
+      }
+    }
+  }
+}
+print(paste("The product of the three largest basins is",
+            prod(sort(as.vector(table(M_ID)), decreasing = TRUE)[2:4])))
+t2 <- proc.time()
+t2 - t1
+```
