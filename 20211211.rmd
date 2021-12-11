@@ -1,0 +1,152 @@
+---
+title: "Day 11"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+```{r}
+t1 <- proc.time()
+puzzle_input <- c(4438624262, 6263251864, 2618812434, 2134264565, 1815131247, 2612457325,
+8585767584, 7217134556, 2825456563, 8248473584)
+#example
+# puzzle_input <- c(5483143223, 2745854711, 5264556173, 6141336146, 6357385478, 4167524645, 2176841721, 6882881134, 4846848554, 5283751526)
+m <- length(puzzle_input) #number of rows
+n <- length(str_split(as.character(puzzle_input[1]), "")[[1]]) #number of columns
+
+# create a matrix (but with a buffer on all 4 sides)
+M <- matrix(0, nrow = m + 2, ncol = n + 2)
+for(row in 2:(m+1)){
+  M[row,2:(n+1)] <- as.integer(str_split(as.character(puzzle_input[row-1]), "")[[1]])
+}
+
+# simulate the octupuses flashes
+num_flashes <- 0
+M_flashed <- matrix(FALSE, nrow = m + 2, ncol = n + 2) #keep track of which octopuses flashed
+for(timestep in 1:100){ 
+  
+  #add one energy unit each octopus (avoid buffer in first and last rows and columns)
+  M[2:(m+1),2:(n+1)] <- M[2:(m+1),2:(n+1)] + 1
+  
+  for(k in 1:(m*n)){ #avoid while loop
+    #traverse matrix (avoid buffer in first and last rows and columns)
+    for(i in 2:(m+1)){
+      for(j in 2:(n+1)){
+        if(M[i,j] > 9 & !M_flashed[i,j]){ #OCTOPUS FLASHES!
+          num_flashes <- num_flashes + 1
+          #add one to neighboring octopuses
+          M[(i-1):(i+1),(j-1):(j+1)] <- M[(i-1):(i+1),(j-1):(j+1)] + 1
+          #reset current octopus
+          M_flashed[i,j] <- TRUE
+        }
+      }
+    }
+  }
+  
+  M[M_flashed] <- 0
+  M_flashed <- matrix(FALSE, nrow = m + 2, ncol = n + 2)
+}
+print(paste("The total number of flashes is", num_flashes))
+t2 <- proc.time()
+t2 - t1
+```
+
+--- Part Two ---
+
+It seems like the individual flashes aren't bright enough to navigate. However, you might have a better option: the flashes seem to be synchronizing!
+
+In the example above, the first time all octopuses flash simultaneously is step 195:
+
+After step 193:
+5877777777
+8877777777
+7777777777
+7777777777
+7777777777
+7777777777
+7777777777
+7777777777
+7777777777
+7777777777
+
+After step 194:
+6988888888
+9988888888
+8888888888
+8888888888
+8888888888
+8888888888
+8888888888
+8888888888
+8888888888
+8888888888
+
+After step 195:
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+0000000000
+
+If you can calculate the exact moments when the octopuses will all flash simultaneously, you should be able to navigate through the cavern. What is the first step during which all octopuses flash?
+
+```{r}
+t1 <- proc.time()
+puzzle_input <- c(4438624262, 6263251864, 2618812434, 2134264565, 1815131247, 2612457325,
+8585767584, 7217134556, 2825456563, 8248473584)
+#example
+# puzzle_input <- c(5483143223, 2745854711, 5264556173, 6141336146, 6357385478, 4167524645, 2176841721, 6882881134, 4846848554, 5283751526)
+m <- length(puzzle_input) #number of rows
+n <- length(str_split(as.character(puzzle_input[1]), "")[[1]]) #number of columns
+
+# create a matrix (but with a buffer on all 4 sides)
+M <- matrix(0, nrow = m + 2, ncol = n + 2)
+for(row in 2:(m+1)){
+  M[row,2:(n+1)] <- as.integer(str_split(as.character(puzzle_input[row-1]), "")[[1]])
+}
+
+# simulate the octupuses flashes
+
+M_flashed <- matrix(FALSE, nrow = m + 2, ncol = n + 2) #keep track of which octopuses flashed
+for(timestep in 1:1000){ 
+  
+  #add one energy unit each octopus (avoid buffer in first and last rows and columns)
+  M[2:(m+1),2:(n+1)] <- M[2:(m+1),2:(n+1)] + 1
+  
+  for(k in 1:(m*n)){ #avoid while loop
+    #traverse matrix (avoid buffer in first and last rows and columns)
+    for(i in 2:(m+1)){
+      for(j in 2:(n+1)){
+        if(M[i,j] > 9 & !M_flashed[i,j]){ #OCTOPUS FLASHES!
+          #add one to neighboring octopuses
+          M[(i-1):(i+1),(j-1):(j+1)] <- M[(i-1):(i+1),(j-1):(j+1)] + 1
+          #reset current octopus
+          M_flashed[i,j] <- TRUE
+        }
+      }
+    }
+  }
+  
+  #if every octopus flashed, stop here
+  if(sum(M_flashed) == (m*n)){
+    break
+  }
+  
+  M[M_flashed] <- 0
+  M_flashed <- matrix(FALSE, nrow = m + 2, ncol = n + 2)
+}
+print(paste("Every octopus flashed at time t =", timestep))
+t2 <- proc.time()
+t2 - t1
+```
+
