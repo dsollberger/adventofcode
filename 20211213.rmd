@@ -1,0 +1,273 @@
+---
+title: "Day 13"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 13: Transparent Origami ---
+
+You reach another volcanically active part of the cave. It would be nice if you could do some kind of thermal imaging so you could tell ahead of time which caves are too hot to safely enter.
+
+Fortunately, the submarine seems to be equipped with a thermal camera! When you activate it, you are greeted with:
+
+Congratulations on your purchase! To activate this infrared thermal imaging
+camera system, please enter the code found on page 1 of the manual.
+
+Apparently, the Elves have never used this feature. To your surprise, you manage to find the manual; as you go to open it, page 1 falls out. It's a large sheet of transparent paper! The transparent paper is marked with random dots and includes instructions on how to fold it up (your puzzle input). For example:
+
+6,10
+0,14
+9,10
+0,3
+10,4
+4,11
+6,0
+6,12
+4,1
+0,13
+10,12
+3,4
+3,0
+8,4
+1,10
+2,14
+8,10
+9,0
+
+fold along y=7
+fold along x=5
+
+The first section is a list of dots on the transparent paper. 0,0 represents the top-left coordinate. The first value, x, increases to the right. The second value, y, increases downward. So, the coordinate 3,0 is to the right of 0,0, and the coordinate 0,7 is below 0,0. The coordinates in this example form the following pattern, where # is a dot on the paper and . is an empty, unmarked position:
+
+...#..#..#.
+....#......
+...........
+#..........
+...#....#.#
+...........
+...........
+...........
+...........
+...........
+.#....#.##.
+....#......
+......#...#
+#..........
+#.#........
+
+Then, there is a list of fold instructions. Each instruction indicates a line on the transparent paper and wants you to fold the paper up (for horizontal y=... lines) or left (for vertical x=... lines). In this example, the first fold instruction is fold along y=7, which designates the line formed by all of the positions where y is 7 (marked here with -):
+
+...#..#..#.
+....#......
+...........
+#..........
+...#....#.#
+...........
+...........
+-----------
+...........
+...........
+.#....#.##.
+....#......
+......#...#
+#..........
+#.#........
+
+Because this is a horizontal line, fold the bottom half up. Some of the dots might end up overlapping after the fold is complete, but dots will never appear exactly on a fold line. The result of doing this fold looks like this:
+
+#.##..#..#.
+#...#......
+......#...#
+#...#......
+.#.#..#.###
+...........
+...........
+
+Now, only 17 dots are visible.
+
+Notice, for example, the two dots in the bottom left corner before the transparent paper is folded; after the fold is complete, those dots appear in the top left corner (at 0,0 and 0,1). Because the paper is transparent, the dot just below them in the result (at 0,3) remains visible, as it can be seen through the transparent paper.
+
+Also notice that some dots can end up overlapping; in this case, the dots merge together and become a single dot.
+
+The second fold instruction is fold along x=5, which indicates this line:
+
+#.##.|#..#.
+#...#|.....
+.....|#...#
+#...#|.....
+.#.#.|#.###
+.....|.....
+.....|.....
+
+Because this is a vertical line, fold left:
+
+#####
+#...#
+#...#
+#...#
+#####
+.....
+.....
+
+The instructions made a square!
+
+The transparent paper is pretty big, so for now, focus on just completing the first fold. After the first fold in the example above, 17 dots are visible - dots that end up overlapping after the fold is completed count as a single dot.
+
+How many dots are visible after completing just the first fold instruction on your transparent paper?
+
+```{r, warning = FALSE}
+puzzle_input <- readLines("20211213input.txt")
+# puzzle_input <- readLines("20211213example.txt")
+num_coords <- length(puzzle_input)
+
+df <- data.frame(x = rep(NA, num_coords),  y = rep(NA, num_coords))
+for(i in 1:num_coords){
+  this_coord_split <- as.integer(str_split(puzzle_input[i], ",")[[1]])
+  df$x[i] <- this_coord_split[1]
+  df$y[i] <- this_coord_split[2]
+}
+
+# first fold (example)
+# fold along y=7
+# n <- nrow(df)
+# for(i in 1:n){
+#   if(df$y[i] > 7){
+#     df$y[i] <- df$y[i] - 2*(df$y[i] - 7)
+#   }
+# }
+
+# first fold (real input)
+# fold along x=655
+n <- nrow(df)
+for(i in 1:n){
+  if(df$x[i] > 655){
+    df$x[i] <- df$x[i] - 2*(df$x[i] - 655)
+  }
+}
+
+# consolidate (i.e. count each overlap as just one dot)
+df <- df %>% distinct()
+print(paste("After one fold, we have",
+            nrow(df), "dots."))
+```
+--- Part Two ---
+
+Finish folding the transparent paper according to the instructions. The manual says the code is always eight capital letters.
+
+What code do you use to activate the infrared thermal imaging camera system?
+
+
+```{r, warning = FALSE}
+puzzle_input <- readLines("20211213input.txt")
+num_coords <- length(puzzle_input)
+
+df <- data.frame(x = rep(NA, num_coords),  y = rep(NA, num_coords))
+for(i in 1:num_coords){
+  this_coord_split <- as.integer(str_split(puzzle_input[i], ",")[[1]])
+  df$x[i] <- this_coord_split[1]
+  df$y[i] <- this_coord_split[2]
+}
+n <- nrow(df)
+
+# fold along x=655
+for(i in 1:n){
+  if(df$x[i] > 655){
+    df$x[i] <- df$x[i] - 2*(df$x[i] - 655)
+  }
+}
+
+# fold along y=447
+for(i in 1:n){
+  if(df$y[i] > 447){
+    df$y[i] <- df$y[i] - 2*(df$y[i] - 447)
+  }
+}
+
+# fold along x=327
+for(i in 1:n){
+  if(df$x[i] > 327){
+    df$x[i] <- df$x[i] - 2*(df$x[i] - 327)
+  }
+}
+
+# fold along y=223
+for(i in 1:n){
+  if(df$y[i] > 223){
+    df$y[i] <- df$y[i] - 2*(df$y[i] - 223)
+  }
+}
+
+# fold along x=163
+for(i in 1:n){
+  if(df$x[i] > 163){
+    df$x[i] <- df$x[i] - 2*(df$x[i] - 163)
+  }
+}
+
+# fold along y=111
+for(i in 1:n){
+  if(df$y[i] > 111){
+    df$y[i] <- df$y[i] - 2*(df$y[i] - 111)
+  }
+}
+
+# fold along x=81
+for(i in 1:n){
+  if(df$x[i] > 81){
+    df$x[i] <- df$x[i] - 2*(df$x[i] - 81)
+  }
+}
+
+# fold along y=55
+for(i in 1:n){
+  if(df$y[i] > 55){
+    df$y[i] <- df$y[i] - 2*(df$y[i] - 55)
+  }
+}
+
+# fold along x=40
+for(i in 1:n){
+  if(df$x[i] > 40){
+    df$x[i] <- df$x[i] - 2*(df$x[i] - 40)
+  }
+}
+
+# fold along y=27
+for(i in 1:n){
+  if(df$y[i] > 27){
+    df$y[i] <- df$y[i] - 2*(df$y[i] - 27)
+  }
+}
+
+# fold along y=13
+for(i in 1:n){
+  if(df$y[i] > 13){
+    df$y[i] <- df$y[i] - 2*(df$y[i] - 13)
+  }
+}
+
+# fold along y=6
+for(i in 1:n){
+  if(df$y[i] > 6){
+    df$y[i] <- df$y[i] - 2*(df$y[i] - 6)
+  }
+}
+
+# consolidate (i.e. count each overlap as just one dot)
+df <- df %>% distinct()
+
+# plot the figure
+df %>%
+  ggplot(aes(x = x, y = y)) +
+  geom_point(size = 5) +
+  scale_y_reverse() +
+  labs(title = "Advent of Code",
+       subtitle = "Day 13: Transparent Origami",
+       caption = "Derek Sollberger")
+```
