@@ -265,9 +265,10 @@ df <- df %>% distinct()
 # plot the figure
 df %>%
   ggplot(aes(x = x, y = y)) +
-  geom_point(size = 5) +
+  geom_rect(aes(xmin = x, xmax = x + 1, ymin = y, ymax = y + 1)) +
   scale_y_reverse() +
   labs(title = "Advent of Code",
        subtitle = "Day 13: Transparent Origami",
-       caption = "Derek Sollberger")
+       caption = "Derek Sollberger") +
+  theme_minimal()
 ```
