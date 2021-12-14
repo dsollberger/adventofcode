@@ -1,0 +1,194 @@
+---
+title: "Day 14"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+--- Day 14: Extended Polymerization ---
+
+The incredible pressures at this depth are starting to put a strain on your submarine. The submarine has polymerization equipment that would produce suitable materials to reinforce the submarine, and the nearby volcanically-active caves should even have the necessary input elements in sufficient quantities.
+
+The submarine manual contains instructions for finding the optimal polymer formula; specifically, it offers a polymer template and a list of pair insertion rules (your puzzle input). You just need to work out what polymer would result after repeating the pair insertion process a few times.
+
+For example:
+
+NNCB
+
+CH -> B
+HH -> N
+CB -> H
+NH -> C
+HB -> C
+HC -> B
+HN -> C
+NN -> C
+BH -> H
+NC -> B
+NB -> B
+BN -> B
+BB -> N
+BC -> B
+CC -> N
+CN -> C
+
+The first line is the polymer template - this is the starting point of the process.
+
+The following section defines the pair insertion rules. A rule like AB -> C means that when elements A and B are immediately adjacent, element C should be inserted between them. These insertions all happen simultaneously.
+
+So, starting with the polymer template NNCB, the first step simultaneously considers all three pairs:
+
+    The first pair (NN) matches the rule NN -> C, so element C is inserted between the first N and the second N.
+    The second pair (NC) matches the rule NC -> B, so element B is inserted between the N and the C.
+    The third pair (CB) matches the rule CB -> H, so element H is inserted between the C and the B.
+
+Note that these pairs overlap: the second element of one pair is the first element of the next pair. Also, because all pairs are considered simultaneously, inserted elements are not considered to be part of a pair until the next step.
+
+After the first step of this process, the polymer becomes NCNBCHB.
+
+Here are the results of a few steps using the above rules:
+
+Template:     NNCB
+After step 1: NCNBCHB
+After step 2: NBCCNBBBCBHCB
+After step 3: NBBBCNCCNBBNBNBBCHBHHBCHB
+After step 4: NBBNBNBBCCNBCNCCNBBNBBNBBBNBBNBBCBHCBHHNHCBBCBHCB
+
+This polymer grows quickly. After step 5, it has length 97; After step 10, it has length 3073. After step 10, B occurs 1749 times, C occurs 298 times, H occurs 191 times, and N occurs 865 times; taking the quantity of the most common element (B, 1749) and subtracting the quantity of the least common element (H, 161) produces 1749 - 161 = 1588.
+
+Apply 10 steps of pair insertion to the polymer template and find the most and least common elements in the result. What do you get if you take the quantity of the most common element and subtract the quantity of the least common element?
+
+```{r}
+t1 <- proc.time()
+# main input
+puzzle_input <- readLines("20211214input.txt")
+first_polymer <- "OKSBBKHFBPVNOBKHBPCO"
+
+# example
+# puzzle_input <- readLines("20211214example.txt")
+# first_polymer <- "NNCB"
+N <- length(puzzle_input)
+
+# create a data frame (to act like a Python dictionary)
+df <- data.frame(old_chain = rep(NA, N), new_chain = rep(NA, N))
+for(this_rule in 1:N){
+  rule_split <- str_split(puzzle_input[this_rule], " -> ")[[1]]
+  df$old_chain[this_rule] <- rule_split[1]
+  old_chain_split <- str_split(df$old_chain[this_rule], "")[[1]]
+  df$new_chain[this_rule] <- paste0(old_chain_split[1], rule_split[2], old_chain_split[2])
+}
+
+# insertions
+our_polymer <- first_polymer
+
+for(t in 1:10){ #time steps
+  n <- str_length(our_polymer)
+  new_polymer <- rep(NA, n + (n-1))
+  for(i in 1:(n-1)){
+    this_old_chain <- paste0(str_split(our_polymer, "")[[1]][i:(i+1)], collapse = "")
+    this_new_chain <- str_split(df$new_chain[df$old_chain == this_old_chain], "")[[1]]
+    new_polymer[(2*i-1):(2*i+1)] <- this_new_chain
+  }
+  
+  #update
+  our_polymer <- paste0(new_polymer, collapse = "")
+  # print(paste("time step:", t))
+  # print(paste("polymer length:",
+  #             str_length(our_polymer)))
+}
+
+final_polymer_split <- str_split(our_polymer, "")[[1]]
+
+print(paste("Part 1 answer:",
+            max(as.numeric(table(final_polymer_split))) -
+              min(as.numeric(table(final_polymer_split)))))
+t2 <- proc.time()
+t2 - t1
+```
+--- Part Two ---
+
+The resulting polymer isn't nearly strong enough to reinforce the submarine. You'll need to run more steps of the pair insertion process; a total of 40 steps should do it.
+
+In the above example, the most common element is B (occurring 2192039569602 times) and the least common element is H (occurring 3849876073 times); subtracting these produces 2188189693529.
+
+Apply 40 steps of pair insertion to the polymer template and find the most and least common elements in the result. What do you get if you take the quantity of the most common element and subtract the quantity of the least common element?
+
+```{r}
+t1 <- proc.time()
+# main input
+puzzle_input <- readLines("20211214input.txt")
+first_polymer <- "OKSBBKHFBPVNOBKHBPCO"
+
+# example
+# puzzle_input <- readLines("20211214example.txt")
+# first_polymer <- "NNCB"
+N <- length(puzzle_input)
+
+# create data frames (to act like Python dictionaries)
+df <- data.frame(old_chain = rep(NA, N), new_chain = rep(NA, N), 
+                 old_count = rep(0, N), new_count = rep(0, N))
+df_letters <- data.frame(cap_letter = LETTERS, letter_count = rep(0, 26))
+
+for(this_rule in 1:N){
+  rule_split <- str_split(puzzle_input[this_rule], " -> ")[[1]]
+  df$old_chain[this_rule] <- rule_split[1]
+  old_chain_split <- str_split(df$old_chain[this_rule], "")[[1]]
+  df$new_chain[this_rule] <- paste0(old_chain_split[1], rule_split[2], old_chain_split[2])
+}
+
+# initialize counts (into old_count)
+n <- str_length(first_polymer)
+for(i in 1:(n-1)){
+  this_pair <- str_sub(first_polymer, i, i+1)
+  df$old_count[df$old_chain == this_pair] <- df$old_count[df$old_chain == this_pair] + 1
+}
+
+#iterate over several steps
+for(t in 1:40){
+  # update counts
+  for(i in 1:N){
+    num_found <- df$old_count[i]
+    first_pair  <- str_sub(df$new_chain[i], 1, 2)
+    second_pair <- str_sub(df$new_chain[i], 2, 3)
+    df$new_count[df$old_chain == first_pair]  <- df$new_count[df$old_chain == first_pair] + num_found
+    df$new_count[df$old_chain == second_pair] <- df$new_count[df$old_chain == second_pair] + num_found
+    # df$new_count[df$old_chain == first_pair]  <- num_found
+    # df$new_count[df$old_chain == second_pair] <- num_found
+  }
+  
+  
+  df$old_count <- df$new_count
+  df$new_count <- rep(0, N)
+}
+
+# now focus on individual letters
+for(j in 1:N){ #move info from df to df_letters
+  letter1 <- str_sub(df$old_chain[j], 1, 1)
+  letter2 <- str_sub(df$old_chain[j], 2, 2)
+  df_letters$letter_count[df_letters$cap_letter == letter1] <-
+    df_letters$letter_count[df_letters$cap_letter == letter1] + df$old_count[j]
+  df_letters$letter_count[df_letters$cap_letter == letter2] <-
+    df_letters$letter_count[df_letters$cap_letter == letter2] + df$old_count[j]
+}
+# just in case, add one from the first and last elements of the polymer
+df_letters$letter_count[df_letters$cap_letter == str_sub(first_polymer, 1, 1)] <-
+  df_letters$letter_count[df_letters$cap_letter == str_sub(first_polymer, 1, 1)] + 1
+df_letters$letter_count[df_letters$cap_letter == str_sub(first_polymer, -1)] <-
+  df_letters$letter_count[df_letters$cap_letter == str_sub(first_polymer, -1)] + 1
+
+df_letters$letter_count <- df_letters$letter_count / 2 #remove double counting
+
+# filter out letters that were never used
+df_elements <- df_letters %>% filter(letter_count > 0)
+print(paste("Part 2:",
+            max(df_elements$letter_count) - min(df_elements$letter_count)))
+
+t2 <- proc.time()
+t2 - t1
+```
+
