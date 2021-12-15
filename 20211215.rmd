@@ -245,8 +245,8 @@ Using the full map, what is the lowest total risk of any path from the top left 
 
 ```{r, message = FALSE, warning = FALSE}
 # load data and replicate risk matrix
-# risk_mat_raw <- readLines("20211215example.txt")
-risk_mat_raw <- readLines("20211215input.txt")
+risk_mat_raw <- readLines("20211215example.txt")
+# risk_mat_raw <- readLines("20211215input.txt")
 m <- length(risk_mat_raw)
 n <- str_length(risk_mat_raw[1])
 risk_mat <- matrix(NA, nrow = m, ncol = n)
@@ -263,12 +263,12 @@ chunk4 <- cbind(risk_mat + 3, risk_mat + 4, risk_mat + 5, risk_mat + 6, risk_mat
 chunk5 <- cbind(risk_mat + 4, risk_mat + 5, risk_mat + 6, risk_mat + 7, risk_mat + 8)
 # expanded risk matrix
 risk_mat <- rbind(chunk1, chunk2, chunk3, chunk4, chunk5)
-risk_mat[risk_mat > 10] <- (risk_mat[risk_mat > 10] %% 10) + 1
+risk_mat[risk_mat >= 10] <- (risk_mat[risk_mat >= 10] %% 10) + 1
 m <- nrow(risk_mat)
 n <- ncol(risk_mat)
 ```
 
-```{r, eval = FALSE}
+```{r}
 # node names such as "n1_2" and "n2_1"
 node_names <- rep(NA, m*n)
 for(i in 1:m){
@@ -276,7 +276,9 @@ for(i in 1:m){
     node_names[(i-1)*n + j] <- paste0("n", i, "_", j)
   }
 }
+```
 
+```{r, eval = FALSE}
 # create mn*mn adjacency matrix (NEED A SPARSE MATRIX!)
 A <- Matrix(0, nrow = m*n, ncol = m*n, sparse = TRUE)
 rownames(A) <- node_names
@@ -311,9 +313,59 @@ for(i in 1:m){
 }
 ```
 
-```{r, eval = FALSE}
+```{r}
+# trying to store info in a data frame of edges
+A_df <- data.frame(from = rep(NA, 4*m*n), to = rep(NA, 4*m*n), risk = rep(NA, 4*m*n))
+row_counter <- 1
+for(i in 1:m){
+  for(j in 1:n){
+    #up
+    if(i > 1){
+      node1 <- paste0("n", i, "_", j)
+      node2 <- paste0("n", i-1, "_", j)
+      A_df$from[row_counter] <- node1
+      A_df$to[row_counter]   <- node2
+      A_df$risk[row_counter] <- risk_mat[i-1, j]
+      row_counter <- row_counter + 1
+    }
+    #down
+    if(i < m){
+      node1 <- paste0("n", i, "_", j)
+      node2 <- paste0("n", i+1, "_", j)
+      A_df$from[row_counter] <- node1
+      A_df$to[row_counter]   <- node2
+      A_df$risk[row_counter] <- risk_mat[i+1, j]
+      row_counter <- row_counter + 1
+    }
+    #left
+    if(j > 1){
+      node1 <- paste0("n", i, "_", j)
+      node2 <- paste0("n", i, "_", j-1)
+      A_df$from[row_counter] <- node1
+      A_df$to[row_counter]   <- node2
+      A_df$risk[row_counter] <- risk_mat[i, j-1]
+      row_counter <- row_counter + 1
+    }
+    #right
+    if(j < n){
+      node1 <- paste0("n", i, "_", j)
+      node2 <- paste0("n", i, "_", j+1)
+      A_df$from[row_counter] <- node1
+      A_df$to[row_counter]   <- node2
+      A_df$risk[row_counter] <- risk_mat[i, j+1]
+      row_counter <- row_counter + 1
+    }
+  }
+}
+A_df <- A_df %>%
+  filter(!is.na(from))
+```
+
+
+```{r, eval = TRUE}
 # using the igraph package
-g <- graph.adjacency(A, weighted = TRUE)
+# g <- graph.adjacency(A, weighted = TRUE)
+g <- graph_from_data_frame(A_df, directed = TRUE) #using the edges data frame instead
 end_node_name <- paste0("n", m, "_", n)
 best_path <- get.shortest.paths(g, "n1_1", end_node_name)
 
@@ -321,9 +373,10 @@ best_path <- get.shortest.paths(g, "n1_1", end_node_name)
 # so I am going to hard-code that part
 total_risk <- 0
 for(t in 1:(length(best_path$vpath[[1]])-1)){
-  # print(paste("Currently adding risk:", A[best_path$vpath[[1]][t], best_path$vpath[[1]][t+1]]))
-  total_risk <- total_risk + A[best_path$vpath[[1]][t], best_path$vpath[[1]][t+1]]
+  # total_risk <- total_risk + A[best_path$vpath[[1]][t], best_path$vpath[[1]][t+1]]
+  node1 <- attributes(best_path$vpath[[1]][t])$names
+  node2 <- attributes(best_path$vpath[[1]][t+1])$names
+  total_risk <- total_risk + A_df$risk[A_df$from == node1 & A_df$to == node2]
 }
-print(paste("The lowest risk path has a total risk of",
-            total_risk))
+print(paste("The lowest risk path has a total risk of", total_risk))
 ```
