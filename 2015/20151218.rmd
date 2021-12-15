@@ -209,8 +209,20 @@ After 5 steps, this example now has 17 lights on.
 In your grid of 100x100 lights, given your initial configuration, but with the four corners always in the on state, how many lights are on after 100 steps?
 
 ```{r}
-num_iterations <- 100
+N <- length(starting_grid_raw)
+old_matrix <- matrix(rep(0, (N+2)^2), nrow = N+2, ncol = N+2)
 
+for(j in 1:N){
+  old_matrix[j+1, 2:(N+1)] <- as.integer(
+    str_split(starting_grid_raw[j], "")[[1]] == "#")
+}
+
+old_matrix[2,2] <- 1
+old_matrix[2,(N+1)] <- 1
+old_matrix[(N+1),2] <- 1
+old_matrix[(N+1),(N+1)] <- 1
+
+num_iterations <- 100
 for(iter in 1:num_iterations){
   new_matrix <- one_life_turn(old_matrix)
   new_matrix[2,2] <- 1
@@ -224,4 +236,5 @@ sum(new_matrix)
 # 865 was too low
 # 893 was incorect
 # 911 was too high
+# 886 was correct!
 ```
