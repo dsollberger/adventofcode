@@ -1,0 +1,82 @@
+---
+title: "Day 3"
+author: "Derek Sollberger"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+```
+
+```{r}
+puzzle_input <- readLines("20201203input.txt")
+N <- length(puzzle_input)
+M <- str_length(puzzle_input[1])
+
+num_trees <- 0
+column_tracker <- 1
+for(row_tracker in 2:N){
+  column_tracker <- column_tracker + 3
+  column_tracker <- column_tracker %% M
+  if(column_tracker == 0){ column_tracker <- M}
+  
+  this_row_split <- str_split(puzzle_input[row_tracker], "")[[1]]
+  if(this_row_split[column_tracker] == "#"){
+    num_trees <- num_trees + 1
+  }
+}
+
+print(paste("We would encounter", num_trees, "trees."))
+```
+--- Part Two ---
+
+Time to check the rest of the slopes - you need to minimize the probability of a sudden arboreal stop, after all.
+
+Determine the number of trees you would encounter if, for each of the following slopes, you start at the top-left corner and traverse the map all the way to the bottom:
+
+    Right 1, down 1.
+    Right 3, down 1. (This is the slope you already checked.)
+    Right 5, down 1.
+    Right 7, down 1.
+    Right 1, down 2.
+
+In the above example, these slopes would find 2, 7, 3, 4, and 2 tree(s) respectively; multiplied together, these produce the answer 336.
+
+What do you get if you multiply together the number of trees encountered on each of the listed slopes?
+
+```{r}
+tree_counter <- function(right = 3, down = 1){
+  num_trees <- 0
+  column_tracker <- 1
+  row_tracker <- 1
+  
+  while(row_tracker <= (N- down)){
+    column_tracker <- column_tracker + right
+    column_tracker <- column_tracker %% M
+    if(column_tracker == 0){ column_tracker <- M}
+    
+    row_tracker <- row_tracker + down
+    
+    this_row_split <- str_split(puzzle_input[row_tracker], "")[[1]]
+    if(this_row_split[column_tracker] == "#"){
+      num_trees <- num_trees + 1
+    }
+  }
+  
+  num_trees # return
+}
+
+
+count1 <- tree_counter(1,1)
+count2 <- tree_counter(3,1)
+count3 <- tree_counter(5,1)
+count4 <- tree_counter(7,1)
+count5 <- tree_counter(1,2)
+
+print(paste("We would encounter", 
+            count1*count2*count3*count4*count5, 
+            "trees."))
+```
+

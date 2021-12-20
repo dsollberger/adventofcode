@@ -251,7 +251,9 @@ reduce_fish <- function(this_fish){
   # the main function (explode and split)
   # INPUT: data frame (after parse_fish)
   # OUTPUT: data frame (still a parse_fish form)
-  while(!is_reduced(this_fish)){
+  iter <- 1
+  max_iter <- 100
+  while(!is_reduced(this_fish) & iter <= max_iter){
     N <- nrow(this_fish)
     if(sum(this_fish$d > 4) > 0){
       first_explode_request <- which.max(this_fish$d > 4)
@@ -265,7 +267,7 @@ reduce_fish <- function(this_fish){
       first_split_request   <- N
     }
     
-    if(first_explode_request < first_split_request){ #EXPLODE!
+    if(first_explode_request < N){ #EXPLODE!
       if(first_explode_request == 1){
         this_fish$x[first_explode_request] <- 0
         this_fish$x[first_explode_request + 2] <- this_fish$x[first_explode_request + 1] +
@@ -291,7 +293,7 @@ reduce_fish <- function(this_fish){
         # this_fish$d[first_explode_request + 1] <- this_fish$d[first_explode_request + 1] - 1
         this_fish <- this_fish[-c(first_explode_request + 1),]
       }
-    }else{ #SPLIT!
+    }else if(first_split_request < N){ #SPLIT!
       this_num <- this_fish$x[first_split_request]
       part1 <- floor(this_num / 2)
       part2 <- ceiling(this_num / 2)
@@ -303,6 +305,7 @@ reduce_fish <- function(this_fish){
       this_fish$d[first_split_request] <- this_fish$d[first_split_request] + 1
     }
     # print(this_fish)
+    iter <- iter + 1
   }
   this_fish #return
 }
@@ -335,7 +338,7 @@ aggregate_fish <- function(list_of_fish){
 # aggregate_fish(c("[1,1]", "[2,2]", "[3,3]", "[4,4]", "[5,5]"))
 # aggregate_fish(c("[1,1]", "[2,2]", "[3,3]", "[4,4]", "[5,5]", "[6,6]"))
 # aggregate_fish(c("[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]",
-# "[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]",
+# "[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]"))
 # "[[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]]",
 # "[[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]]",
 # "[7,[5,[[3,8],[1,4]]]]",
@@ -372,5 +375,6 @@ compute_magnitude(parse_fish("[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7
 ```{r}
 compute_magnitude(aggregate_fish(puzzle_input))
 # 3996 was too high
+# 3859 was too high
 ```
 
