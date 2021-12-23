@@ -139,7 +139,7 @@ two_doubles_check <- function(child_name){
       these_two_letters <- paste0(child_name_list[i],
                                   child_name_list[i+1],
                                   collapse = "")
-      rest_of_name <- paste0(child_name_list[i+2:n], collapse = "")
+      rest_of_name <- paste0(child_name_list[(i+2):n], collapse = "")
       if(str_detect(rest_of_name, these_two_letters)){
         pass_check <- TRUE
         break
