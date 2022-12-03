@@ -1,0 +1,13 @@
+---
+title: "Day 3"
+author: "Derek Sollberger"
+format: html
+---
+
+```{r}
+#| message: false
+#| warning: false
+# data_raw <- puzzle_input("20221203input.txt")
+data_raw <- puzzle_input("20221203example.txt")
+```
+
