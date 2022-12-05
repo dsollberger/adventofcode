@@ -1,5 +1,5 @@
 ---
-title: "Day 3"
+title: "Day 4"
 author: "Derek Sollberger"
 format: html
 ---
@@ -7,7 +7,10 @@ format: html
 ```{r}
 #| message: false
 #| warning: false
-# data_raw <- puzzle_input("20221203input.txt")
-data_raw <- puzzle_input("20221203example.txt")
+
+library("tidyverse")
+
+# data_raw <- puzzle_input("20221204input.txt")
+data_raw <- puzzle_input("20221204example.txt")
 ```
 
