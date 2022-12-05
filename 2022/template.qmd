@@ -10,7 +10,7 @@ format: html
 
 library("tidyverse")
 
-# data_raw <- puzzle_input("20221204input.txt")
-data_raw <- puzzle_input("20221204example.txt")
+# puzzle_input <- readLines("20221204input.txt")
+puzzle_input <- readLines("20221204example.txt")
 ```
 
