@@ -1,5 +1,5 @@
 ---
-title: "Day 4"
+title: "Day 12"
 author: "Derek Sollberger"
 format: html
 ---
@@ -10,7 +10,7 @@ format: html
 
 library("tidyverse")
 
-# puzzle_input <- readLines("20221204input.txt")
-puzzle_input <- readLines("20221204example.txt")
+# puzzle_input <- readLines("../inputs/20221212input.txt")
+puzzle_input <- readLines("../inputs/20221212example.txt")
 ```
 
