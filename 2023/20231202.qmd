@@ -1,0 +1,281 @@
+---
+title: "Day 2"
+author: "Derek Sollberger"
+format: html
+---
+
+# Day 2: Cube Conundrum ---
+
+You're launched high into the atmosphere! The apex of your trajectory just barely reaches the surface of a large island floating in the sky. You gently land in a fluffy pile of leaves. It's quite cold, but you don't see much snow. An Elf runs over to greet you.
+
+The Elf explains that you've arrived at Snow Island and apologizes for the lack of snow. He'll be happy to explain the situation, but it's a bit of a walk, so you have some time. They don't get many visitors up here; would you like to play a game in the meantime?
+
+As you walk, the Elf shows you a small bag and some cubes which are either red, green, or blue. Each time you play this game, he will hide a secret number of cubes of each color in the bag, and your goal is to figure out information about the number of cubes.
+
+To get information, once a bag has been loaded with cubes, the Elf will reach into the bag, grab a handful of random cubes, show them to you, and then put them back in the bag. He'll do this a few times per game.
+
+You play several games and record the information from each game (your puzzle input). Each game is listed with its ID number (like the 11 in Game 11: ...) followed by a semicolon-separated list of subsets of cubes that were revealed from the bag (like 3 red, 5 green, 4 blue).
+
+For example, the record of a few games might look like this:
+
+```
+Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
+Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
+Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
+Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green
+```
+
+In game 1, three sets of cubes are revealed from the bag (and then put back again). The first set is 3 blue cubes and 4 red cubes; the second set is 1 red cube, 2 green cubes, and 6 blue cubes; the third set is only 2 green cubes.
+
+The Elf would first like to know which games would have been possible if the bag contained only 12 red cubes, 13 green cubes, and 14 blue cubes?
+
+In the example above, games 1, 2, and 5 would have been possible if the bag had been loaded with that configuration. However, game 3 would have been impossible because at one point the Elf showed you 20 red cubes at once; similarly, game 4 would also have been impossible because the Elf showed you 15 blue cubes at once. If you add up the IDs of the games that would have been possible, you get 8.
+
+Determine which games would have been possible if the bag had been loaded with only 12 red cubes, 13 green cubes, and 14 blue cubes. What is the sum of the IDs of those games?
+
+```{r}
+#| message: false
+#| warning: false
+library("dplyr")
+library("stringr")
+```
+
+
+```{r}
+puzzle_input <- readLines("../inputs/20231202example.txt")
+puzzle_input <- readLines("../inputs/20231202input.txt")
+
+N <- length(puzzle_input)
+gameID <- seq(1,N)
+```
+
+```{r}
+draw1 <- rep(NA,N)
+draw2 <- rep(NA,N)
+draw3 <- rep(NA,N)
+draw4 <- rep(NA,N)
+draw5 <- rep(NA,N)
+draw6 <- rep(NA,N)
+
+red1 <- rep(NA,N)
+red2 <- rep(NA,N)
+red3 <- rep(NA,N)
+red4 <- rep(NA,N)
+red5 <- rep(NA,N)
+red6 <- rep(NA,N)
+green1 <- rep(NA,N)
+green2 <- rep(NA,N)
+green3 <- rep(NA,N)
+green4 <- rep(NA,N)
+green5 <- rep(NA,N)
+green6 <- rep(NA,N)
+blue1 <- rep(NA,N)
+blue2 <- rep(NA,N)
+blue3 <- rep(NA,N)
+blue4 <- rep(NA,N)
+blue5 <- rep(NA,N)
+blue6 <- rep(NA,N)
+
+isPossible <- rep(TRUE,N)
+
+for(i in 1:N){
+  these_obs <- str_split(puzzle_input[i], ": ")[[1]][2]
+  these_draws <- str_split(these_obs, "; ")[[1]]
+  
+  draw1[i] <- these_draws[1]
+  if(length(these_draws) > 1){
+    draw2[i] <- these_draws[2]
+  }
+  if(length(these_draws) > 2){
+    draw3[i] <- these_draws[3]
+  }
+  if(length(these_draws) > 3){
+    draw4[i] <- these_draws[4]
+  }
+  if(length(these_draws) > 4){
+    draw5[i] <- these_draws[5]
+  }
+  if(length(these_draws) > 5){
+    draw6[i] <- these_draws[6]
+  }
+  
+  draw1_sep <- str_split(draw1[i], ", ")[[1]]
+  if(sum(str_detect(draw1_sep, "red")) > 0){
+    red1[i] <- str_extract(draw1_sep[which.max(str_detect(draw1_sep, "red"))], "\\d+")
+  }
+  if(sum(str_detect(draw1_sep, "green")) > 0){
+    green1[i] <- str_extract(draw1_sep[which.max(str_detect(draw1_sep, "green"))], "\\d+")
+  }
+  if(sum(str_detect(draw1_sep, "blue")) > 0){
+    blue1[i] <- str_extract(draw1_sep[which.max(str_detect(draw1_sep, "blue"))], "\\d+")
+  }
+  
+  if(!is.na(draw2[i])){
+    draw2_sep <- str_split(draw2[i], ", ")[[1]]
+    if(sum(str_detect(draw2_sep, "red")) > 0){
+      red2[i] <- str_extract(draw2_sep[which.max(str_detect(draw2_sep, "red"))], "\\d+")
+    }
+    if(sum(str_detect(draw2_sep, "green")) > 0){
+      green2[i] <- str_extract(draw2_sep[which.max(str_detect(draw2_sep, "green"))], "\\d+")
+    }
+    if(sum(str_detect(draw2_sep, "blue")) > 0){
+      blue2[i] <- str_extract(draw2_sep[which.max(str_detect(draw2_sep, "blue"))], "\\d+")
+    }
+  }
+  
+  if(!is.na(draw3[i])){
+    draw3_sep <- str_split(draw3[i], ", ")[[1]]
+    if(sum(str_detect(draw3_sep, "red")) > 0){
+      red3[i] <- str_extract(draw3_sep[which.max(str_detect(draw3_sep, "red"))], "\\d+")
+    }
+    if(sum(str_detect(draw3_sep, "green")) > 0){
+      green3[i] <- str_extract(draw3_sep[which.max(str_detect(draw3_sep, "green"))], "\\d+")
+    }
+    if(sum(str_detect(draw3_sep, "blue")) > 0){
+      blue3[i] <- str_extract(draw3_sep[which.max(str_detect(draw3_sep, "blue"))], "\\d+")
+    }
+  }
+  
+  if(!is.na(draw4[i])){
+    draw4_sep <- str_split(draw4[i], ", ")[[1]]
+    if(sum(str_detect(draw4_sep, "red")) > 0){
+      red4[i] <- str_extract(draw4_sep[which.max(str_detect(draw4_sep, "red"))], "\\d+")
+    }
+    if(sum(str_detect(draw4_sep, "green")) > 0){
+      green4[i] <- str_extract(draw4_sep[which.max(str_detect(draw4_sep, "green"))], "\\d+")
+    }
+    if(sum(str_detect(draw4_sep, "blue")) > 0){
+      blue4[i] <- str_extract(draw4_sep[which.max(str_detect(draw4_sep, "blue"))], "\\d+")
+    }
+  }
+  
+  if(!is.na(draw5[i])){
+    draw5_sep <- str_split(draw5[i], ", ")[[1]]
+    if(sum(str_detect(draw5_sep, "red")) > 0){
+      red5[i] <- str_extract(draw5_sep[which.max(str_detect(draw5_sep, "red"))], "\\d+")
+    }
+    if(sum(str_detect(draw5_sep, "green")) > 0){
+      green5[i] <- str_extract(draw5_sep[which.max(str_detect(draw5_sep, "green"))], "\\d+")
+    }
+    if(sum(str_detect(draw5_sep, "blue")) > 0){
+      blue5[i] <- str_extract(draw5_sep[which.max(str_detect(draw5_sep, "blue"))], "\\d+")
+    }
+  }
+  
+  if(!is.na(draw6[i])){
+    draw6_sep <- str_split(draw6[i], ", ")[[1]]
+    if(sum(str_detect(draw6_sep, "red")) > 0){
+      red6[i] <- str_extract(draw6_sep[which.max(str_detect(draw6_sep, "red"))], "\\d+")
+    }
+    if(sum(str_detect(draw6_sep, "green")) > 0){
+      green6[i] <- str_extract(draw6_sep[which.max(str_detect(draw6_sep, "green"))], "\\d+")
+    }
+    if(sum(str_detect(draw6_sep, "blue")) > 0){
+      blue6[i] <- str_extract(draw6_sep[which.max(str_detect(draw6_sep, "blue"))], "\\d+")
+    }
+  }
+}
+
+red1[is.na(red1)] <- 0
+red2[is.na(red2)] <- 0
+red3[is.na(red3)] <- 0
+red4[is.na(red4)] <- 0
+red5[is.na(red5)] <- 0
+red6[is.na(red6)] <- 0
+green1[is.na(green1)] <- 0
+green2[is.na(green2)] <- 0
+green3[is.na(green3)] <- 0
+green4[is.na(green4)] <- 0
+green5[is.na(green5)] <- 0
+green6[is.na(green6)] <- 0
+blue1[is.na(blue1)] <- 0
+blue2[is.na(blue2)] <- 0
+blue3[is.na(blue3)] <- 0
+blue4[is.na(blue4)] <- 0
+blue5[is.na(blue5)] <- 0
+blue6[is.na(blue6)] <- 0
+
+red1 <- as.numeric(red1)
+red2 <- as.numeric(red2)
+red3 <- as.numeric(red3)
+red4 <- as.numeric(red4)
+red5 <- as.numeric(red5)
+red6 <- as.numeric(red6)
+green1 <- as.numeric(green1)
+green2 <- as.numeric(green2)
+green3 <- as.numeric(green3)
+green4 <- as.numeric(green4)
+green5 <- as.numeric(green5)
+green6 <- as.numeric(green6)
+blue1 <- as.numeric(blue1)
+blue2 <- as.numeric(blue2)
+blue3 <- as.numeric(blue3)
+blue4 <- as.numeric(blue4)
+blue5 <- as.numeric(blue5)
+blue6 <- as.numeric(blue6)
+
+for(i in 1:N){
+  if(red1[i] > 12 | red2[i] > 12 | red3[i] > 12 | red4[i] > 12 | red5[i] > 12 | red6[i] > 12){
+    isPossible[i] <- FALSE
+  }
+  if(green1[i] > 13 | green2[i] > 13 | green3[i] > 13 | green4[i] > 13 | green5[i] > 13 | green6[i] > 13){
+    isPossible[i] <- FALSE
+  }
+  if(blue1[i] > 14 | blue2[i] > 14 | blue3[i] > 14 | blue4[i] > 14 | blue5[i] > 14 | blue6[i] > 14){
+    isPossible[i] <- FALSE
+  }
+}
+
+df <- data.frame(gameID, 
+                 draw1, red1, green1, blue1,
+                 draw2, red2, green2, blue2,
+                 draw3, red3, green3, blue3,
+                 draw4, red4, green4, blue4,
+                 draw5, red5, green5, blue5,
+                 draw6, red6, green6, blue6,
+                 isPossible)
+
+# The sum of the IDs of those games is
+sum(df$gameID[df$isPossible])
+```
+
+## Part 2
+
+The Elf says they've stopped producing snow because they aren't getting any water! He isn't sure why the water stopped; however, he can show you how to get to the water source to check it out for yourself. It's just up ahead!
+
+As you continue your walk, the Elf poses a second question: in each game you played, what is the fewest number of cubes of each color that could have been in the bag to make the game possible?
+
+Again consider the example games from earlier:
+
+```
+Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
+Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
+Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
+Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green
+```
+
+* In game 1, the game could have been played with as few as 4 red, 2 green, and 6 blue cubes. If any color had even one fewer cube, the game would have been impossible.
+* Game 2 could have been played with a minimum of 1 red, 3 green, and 4 blue cubes.
+* Game 3 must have been played with at least 20 red, 13 green, and 6 blue cubes.
+* Game 4 required at least 14 red, 3 green, and 15 blue cubes.
+* Game 5 needed no fewer than 6 red, 3 green, and 2 blue cubes in the bag.
+
+The power of a set of cubes is equal to the numbers of red, green, and blue cubes multiplied together. The power of the minimum set of cubes in game 1 is 48. In games 2-5 it was 12, 1560, 630, and 36, respectively. Adding up these five powers produces the sum 2286.
+
+For each game, find the minimum set of cubes that must have been present. 
+
+```{r}
+df2 <- df |>
+  rowwise() |>
+  mutate(redNeed = max(red1, red2, red3, red4, red5, red6),
+         greenNeed = max(green1, green2, green3, green4, green5, green6),
+         blueNeed = max(blue1, blue2, blue3, blue4, blue5, blue6)) |>
+  select(-c(gameID, draw1, draw2, draw3, draw4, draw5, draw6, isPossible)) |>
+  mutate(products = redNeed * blueNeed * greenNeed)
+
+# The sum of the power of these sets is
+sum(df2$products)
+```
+

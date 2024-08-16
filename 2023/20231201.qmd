@@ -1,0 +1,197 @@
+---
+title: "Day 1"
+author: "Derek Sollberger"
+format: html
+---
+
+# Day 1: Trebuchet?!
+
+Something is wrong with global snow production, and you've been selected to take a look. The Elves have even given you a map; on it, they've used stars to mark the top fifty locations that are likely to be having problems.
+
+You've been doing this long enough to know that to restore snow operations, you need to check all fifty stars by December 25th.
+
+Collect stars by solving puzzles. Two puzzles will be made available on each day in the Advent calendar; the second puzzle is unlocked when you complete the first. Each puzzle grants one star. Good luck!
+
+You try to ask why they can't just use a weather machine ("not powerful enough") and where they're even sending you ("the sky") and why your map looks mostly blank ("you sure ask a lot of questions") and hang on did you just say the sky ("of course, where do you think snow comes from") when you realize that the Elves are already loading you into a trebuchet ("please hold still, we need to strap you in").
+
+As they're making the final adjustments, they discover that their calibration document (your puzzle input) has been amended by a very young Elf who was apparently just excited to show off her art skills. Consequently, the Elves are having trouble reading the values on the document.
+
+The newly-improved calibration document consists of lines of text; each line originally contained a specific calibration value that the Elves now need to recover. On each line, the calibration value can be found by combining the first digit and the last digit (in that order) to form a single two-digit number.
+
+For example:
+
+```
+1abc2
+pqr3stu8vwx
+a1b2c3d4e5f
+treb7uchet
+```
+
+In this example, the calibration values of these four lines are 12, 38, 15, and 77. Adding these together produces 142.
+
+Consider your entire calibration document. What is the sum of all of the calibration values?
+
+```{r}
+puzzle_input <- readLines("../inputs/20231201example.txt")
+puzzle_input <- readLines("../inputs/20231201input.txt")
+
+N <- length(puzzle_input)
+```
+
+```{r}
+first_digit = rep(NA, N)
+second_digit = rep(NA, N)
+
+for(i in 1:N){
+  # https://stackoverflow.com/questions/14543627/extracting-numbers-from-vectors-of-strings
+  these_digits <- stringr::str_extract_all(puzzle_input[i], "\\d")[[1]]
+  first_digit[i] <- head(these_digits, 1)
+  second_digit[i] <- tail(these_digits, 1)
+}
+
+combined_digits <- as.numeric(paste0(first_digit, second_digit))
+```
+
+The sum of all of the calibration values is `r sum(combined_digits)`
+
+## Part 2
+
+--- Part Two ---
+
+Your calculation isn't quite right. It looks like some of the digits are actually spelled out with letters: one, two, three, four, five, six, seven, eight, and nine also count as valid "digits".
+
+Equipped with this new information, you now need to find the real first and last digit on each line. For example:
+
+```
+two1nine
+eightwothree
+abcone2threexyz
+xtwone3four
+4nineeightseven2
+zoneight234
+7pqrstsixteen
+```
+
+In this example, the calibration values are 29, 83, 13, 24, 42, 14, and 76. Adding these together produces 281.
+
+What is the sum of all of the calibration values?
+
+```{r}
+puzzle_input <- readLines("../inputs/20231201example2.txt")
+puzzle_input <- readLines("../inputs/20231201input.txt")
+
+N <- length(puzzle_input)
+```
+
+```{r}
+# puzzle_input <- stringr::str_replace_all(puzzle_input, "one", "1")
+# puzzle_input <- stringr::str_replace_all(puzzle_input, "two", "2")
+# puzzle_input <- stringr::str_replace_all(puzzle_input, "three", "3")
+# puzzle_input <- stringr::str_replace_all(puzzle_input, "four", "4")
+# puzzle_input <- stringr::str_replace_all(puzzle_input, "five", "5")
+# puzzle_input <- stringr::str_replace_all(puzzle_input, "six", "6")
+# puzzle_input <- stringr::str_replace_all(puzzle_input, "seven", "7")
+# puzzle_input <- stringr::str_replace_all(puzzle_input, "eight", "8")
+# puzzle_input <- stringr::str_replace_all(puzzle_input, "nine", "9")
+
+# https://stackoverflow.com/questions/60129058/stringr-str-replace-on-multiple-patterns-and-replacements
+# puzzle_input <- stringr::str_replace_all(puzzle_input,
+#                                          c("one" = "1",
+#                                            "two" = "2",
+#                                            "three" = "3",
+#                                            "four" = "4",
+#                                            "five" = "5",
+#                                            "six" = "6",
+#                                            "seven" = "7",
+#                                            "eight" = "8",
+#                                            "nine" = "9"))
+```
+
+Alas, the previous approaches replaced "eightwo" with "eigh2" when we wanted "8wo".  We need to really enforce left-to-right replacement in a much more thorough search.
+
+```{r}
+for(i in 1:(4*N)){ #going through the list multiple times
+  row <- (i %% N) + 1
+  M <- nchar(puzzle_input[row])
+  
+  # add padding
+  padded_row <- paste0(puzzle_input[row], "..")
+  
+  for(j in 1:(M-2)){
+    this_quintet <- stringr::str_sub(padded_row, j, j+4)
+    
+    # if("one" == stringr::str_sub(this_quintet, 1, 3)){
+    #   puzzle_input[row] <- stringr::str_replace(puzzle_input[row], "one", "1")
+    # }
+    # if("two" == stringr::str_sub(this_quintet, 1, 3)){
+    #   puzzle_input[row] <- stringr::str_replace(puzzle_input[row], "two", "2")
+    # }
+    # if("three" == stringr::str_sub(this_quintet, 1, 5)){
+    #   puzzle_input[row] <- stringr::str_replace(puzzle_input[row], "three", "3")
+    # }
+    # if("four" == stringr::str_sub(this_quintet, 1, 4)){
+    #   puzzle_input[row] <- stringr::str_replace(puzzle_input[row], "four", "4")
+    # }
+    # if("five" == stringr::str_sub(this_quintet, 1, 4)){
+    #   puzzle_input[row] <- stringr::str_replace(puzzle_input[row], "five", "5")
+    # }
+    # if("six" == stringr::str_sub(this_quintet, 1, 3)){
+    #   puzzle_input[row] <- stringr::str_replace(puzzle_input[row], "six", "6")
+    # }
+    # if("seven" == stringr::str_sub(this_quintet, 1, 5)){
+    #   puzzle_input[row] <- stringr::str_replace(puzzle_input[row], "seven", "7")
+    # }
+    # if("eight" == stringr::str_sub(this_quintet, 1, 5)){
+    #   puzzle_input[row] <- stringr::str_replace(puzzle_input[row], "eight", "8")
+    # }
+    # if("nine" == stringr::str_sub(this_quintet, 1, 4)){
+    #   puzzle_input[row] <- stringr::str_replace(puzzle_input[row], "nine", "9")
+    # }
+    
+    if("one" == stringr::str_sub(this_quintet, 1, 3)){
+      stringr::str_sub(puzzle_input[row], j, j+2) <- "1.."
+    }
+    if("two" == stringr::str_sub(this_quintet, 1, 3)){
+      stringr::str_sub(puzzle_input[row], j, j+2) <- "2.."
+    }
+    if("three" == stringr::str_sub(this_quintet, 1, 5)){
+      stringr::str_sub(puzzle_input[row], j, j+4) <- "3...."
+    }
+    if("four" == stringr::str_sub(this_quintet, 1, 4)){
+      stringr::str_sub(puzzle_input[row], j, j+3) <- "4..."
+    }
+    if("five" == stringr::str_sub(this_quintet, 1, 4)){
+      stringr::str_sub(puzzle_input[row], j, j+3) <- "5..."
+    }
+    if("six" == stringr::str_sub(this_quintet, 1, 3)){
+      stringr::str_sub(puzzle_input[row], j, j+2) <- "6.."
+    }
+    if("seven" == stringr::str_sub(this_quintet, 1, 5)){
+      stringr::str_sub(puzzle_input[row], j, j+4) <- "7...."
+    }
+    if("eight" == stringr::str_sub(this_quintet, 1, 5)){
+      stringr::str_sub(puzzle_input[row], j, j+4) <- "8...."
+    }
+    if("nine" == stringr::str_sub(this_quintet, 1, 4)){
+      stringr::str_sub(puzzle_input[row], j, j+3) <- "9..."
+    }
+  }
+}
+```
+
+
+```{r}
+first_digit = rep(NA, N)
+second_digit = rep(NA, N)
+
+for(i in 1:N){
+  # https://stackoverflow.com/questions/14543627/extracting-numbers-from-vectors-of-strings
+  these_digits <- stringr::str_extract_all(puzzle_input[i], "\\d")[[1]]
+  first_digit[i] <- head(these_digits, 1)
+  second_digit[i] <- tail(these_digits, 1)
+}
+
+combined_digits <- as.numeric(paste0(first_digit, second_digit))
+```
+
+The sum of all of the calibration values is `r sum(combined_digits)`
